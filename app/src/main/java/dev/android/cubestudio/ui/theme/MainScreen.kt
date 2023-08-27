@@ -104,15 +104,16 @@ fun RowScope.AddItem (
 ) {
     NavigationBarItem(
         label = {Text(text = screen.title)},
-        icon = {Icon(
-            imageVector = ImageVector.vectorResource(id = screen.icon),
-            contentDescription = screen.title
-        )},
+        icon = {
+            Icon(
+                imageVector = ImageVector.vectorResource(id = screen.icon),
+                contentDescription = screen.title
+            )
+        },
         selected = currentDestination?.hierarchy?.any {
             it.route == screen.route
         } == true,
-        colors = NavigationBarItemDefaults.colors
-            (
+        colors = NavigationBarItemDefaults.colors(
             selectedIconColor = colorResource(id = R.color.text),
             selectedTextColor = colorResource(id = R.color.text),
             unselectedIconColor = colorResource(id = R.color.secondaryText),
