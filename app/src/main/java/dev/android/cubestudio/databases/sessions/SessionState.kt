@@ -1,6 +1,7 @@
 package dev.android.cubestudio.databases.sessions
 
-class SessionState {
-    val sessionName = ""
-    val isAddingSession = false
-}
+data class SessionState (
+    val sessions: List<Session> = emptyList(),
+    val sessionName: String = "",
+    val isAddingSession: Boolean = false
+)

@@ -5,10 +5,9 @@ import androidx.room.PrimaryKey
 
 @Entity
 data class Session (
-    @PrimaryKey
-    val sessionId: Int,
+    @PrimaryKey(autoGenerate = true)
+    val sessionId: Int? = null,
     val createdAt: Long,
-    val name: String,
+    val sessionName: String,
     val scrambleType: String,
-    val userId: Int
 )

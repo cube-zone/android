@@ -16,14 +16,13 @@ import dev.android.cubestudio.screens.TimerScreen
 
 @Composable
 fun BottomNavGraph(navController: NavHostController, modifier: Modifier = Modifier, paddingValues: PaddingValues){
-    var scrambleType by remember { mutableStateOf("3x3") }
     NavHost(
         navController = navController,
         startDestination = BottomBarScreen.timer.route
     ) {
         composable(route = BottomBarScreen.timer.route) {
            TimerScreen(
-               scrambleType = scrambleType, session = "Default",
+               session = "Default",
                paddingValues = paddingValues
            )
         }

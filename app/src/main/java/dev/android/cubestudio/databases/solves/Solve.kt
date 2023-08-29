@@ -5,17 +5,16 @@ import androidx.room.PrimaryKey
 
 @Entity
 data class Solve (
-    val time: Long, //time in ms
-    val createdAt: Long, //time in ms at start
+    val time: Long,
+    val createdAt: Long,
     val scramble: String,
-    val penalisation: Int,
-    val dnf: Boolean,
-    val comment: String,
-    val wasPb: Boolean,
-    val isSmartCube: Boolean,
-    val userId: Int,
-    val sessionId: String,
-    val isRandomState: Boolean,
+    val penalisation: Int? = null,
+    val dnf: Boolean = false,
+    val comment: String? = null,
+    val wasPb: Boolean = false,
+    val isSmartCube: Boolean = false,
+    val sessionId: Int,
+    val isRandomState: Boolean = false,
     @PrimaryKey(autoGenerate = true)
-    val id: Int,
+    val solveId: Int? = null,
 )

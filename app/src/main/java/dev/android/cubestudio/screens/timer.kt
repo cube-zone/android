@@ -200,14 +200,13 @@ fun ScrambleTypeDropdown(expanded:Boolean):Boolean {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TimerScreen(scrambleType: String, session: String, paddingValues: PaddingValues, modifier: Modifier = Modifier) {
+fun TimerScreen(session: String, paddingValues: PaddingValues, modifier: Modifier = Modifier) {
     val timerObject by remember { mutableStateOf(TimerObject())}
     var time by remember { mutableStateOf(0L) }
     var lastTime by remember { mutableStateOf(0L)}
     var currentlyTiming by remember { mutableStateOf(false) }
-    val currentScramble by remember {mutableStateOf( Current(Type = scrambleType) )}
+    val currentScramble by remember {mutableStateOf( Current(Type = "3x3") )}
     var scramble by remember{ mutableStateOf(Scramble(currentScramble.Type)) }
-
 
     val view = LocalView.current
     val windowInsets = remember(view) { ViewCompat.getRootWindowInsets(view) }
@@ -226,10 +225,11 @@ fun TimerScreen(scrambleType: String, session: String, paddingValues: PaddingVal
         Surface(
             color = colorResource(id = R.color.mainBg),
             onClick = {
+                println(currentScramble)
                 if (!currentlyTiming) {
                     timerObject.startTimer()
                 } else {
-                    scramble = scrambleThree()
+                    scramble = Scramble(currentScramble.Type)
                     //code to save solve
                 }
                 currentlyTiming = !currentlyTiming
