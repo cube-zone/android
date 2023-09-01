@@ -6,6 +6,7 @@ import dev.android.cubestudio.databases.solves.Solve
 import dev.android.cubestudio.databases.solves.SolveDao
 import dev.android.cubestudio.databases.solves.SolveEvent
 import dev.android.cubestudio.databases.solves.SolveState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -21,36 +22,68 @@ class SolveViewModel(private val dao: SolveDao): ViewModel() {
         state.copy(
             solves = solves
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SolveState())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(500), SolveState())
     fun onEvent(event: SolveEvent) {
         when (event) {
+            is SolveEvent.SetSolve -> {
+                _state.update { it.copy(
+                    time = event.time,
+                    createdAt = event.createdAt,
+                    scramble = event.scramble,
+                    penalisation = event.penalisation,
+                    dnf = event.dnf,
+                    comment = event.comment,
+                    wasPb = event.wasPb,
+                    isSmartCube = event.isSmartCube,
+                    sessionId = event.sessionId,
+                    isRandomState = event.isRandomState,
+                ) }
+            }
             is SolveEvent.DeleteSolve -> {
                 viewModelScope.launch {
                     dao.deleteSolve(event.solve)
                 }
             }
-            SolveEvent.SaveSolve -> {
-                val newComment = state.value.newComment
+            is SolveEvent.SaveSolve -> {
                 val time = state.value.time
-                if (newComment.isBlank()) {
-                    return
-                }
+                val sessionId = state.value.sessionId
+                val scramble = state.value.scramble
+                val createdAt = state.value.createdAt
+                val comment = state.value.comment
+                val penalisation = state.value.penalisation
+                val dnf = state.value.dnf
+                val wasPb = state.value.wasPb
+                val isSmartCube = state.value.isSmartCube
+                val isRandomState = state.value.isRandomState
+
                 val solve = Solve(
-                    comment = newComment,
-                    createdAt = System.currentTimeMillis(),
-                    scramble = "",
-                    sessionId = 0,
-                    time = time
+                    createdAt = createdAt,
+                    scramble = scramble,
+                    sessionId = sessionId,
+                    time = time,
+                    comment = comment,
+                    penalisation = penalisation,
+                    dnf = dnf,
+                    wasPb = wasPb,
+                    isSmartCube = isSmartCube,
+                    isRandomState = isRandomState
                 )
-                viewModelScope.launch {
-                    dao.updateSolve(solve)
+                viewModelScope.launch(Dispatchers.IO) {
+                    dao.upsertSolve(solve)
                 }
-                _state.update {
-                    it.copy(
-                        isEditingComment = false,
-                        newComment = ""
-                    )
-                }
+                _state.update { it.copy(
+                    time = 0,
+                    createdAt = 0,
+                    scramble = "",
+                    penalisation = null,
+                    dnf = false,
+                    comment = null,
+                    wasPb = false,
+                    isSmartCube = false,
+                    sessionId = 0,
+                    isRandomState = false,
+                ) }
+                println("kdbawkndl${solve}")
             }
             SolveEvent.HideEditCommentDialog -> {
                 _state.update {
@@ -67,7 +100,7 @@ class SolveViewModel(private val dao: SolveDao): ViewModel() {
                 }
             }
             is SolveEvent.DnfSolve -> {
-                val updatedSolve = event.solve.copy(dnf = true)
+                val updatedSolve = event.solve.copy(dnf = event.value)
                 viewModelScope.launch {
                     dao.updateSolve(updatedSolve)
                 }
@@ -84,7 +117,7 @@ class SolveViewModel(private val dao: SolveDao): ViewModel() {
             is SolveEvent.PenaliseSolve -> {
                 val updatedSolve = event.solve.copy(penalisation = event.value)
                 viewModelScope.launch {
-                    dao.updateSolve(updatedSolve)
+                    dao.upsertSolve(updatedSolve)
                 }
             }
         }

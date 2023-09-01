@@ -38,14 +38,19 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
+import dev.android.cubestudio.MainActivity
+import dev.android.cubestudio.databases.solves.SolveEvent
+import dev.android.cubestudio.databases.solves.SolveState
 
 val poppins = FontFamily(Font(resId = R.font.poppinsmedium))
 val poppinsSemiBold = FontFamily(Font(resId = R.font.poppinssemibold))
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Preview(showSystemUi = true, showBackground = true)
 @Composable
-fun MainScreen() {
+fun MainScreen(
+    state: SolveState,
+    onEvent: (SolveEvent) -> Unit
+) {
     val navController = rememberNavController()
     Scaffold(
         bottomBar = { BottomBar(navController = navController) },
@@ -54,10 +59,13 @@ fun MainScreen() {
             BottomNavGraph(
                 navController = navController,
                 paddingValues = paddingValues,
+                mainActivity = MainActivity(),
+                state = state,
+                onEvent = onEvent
             )
         }
     )
-    }
+}
 @Composable
 fun Logo(name: String) {
     val view = LocalView.current
@@ -114,9 +122,7 @@ fun RowScope.AddItem (
                 contentDescription = screen.title
             )
         },
-        selected = currentDestination?.hierarchy?.any {
-            it.route == screen.route
-        } == true,
+        selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
         colors = NavigationBarItemDefaults.colors(
             selectedIconColor = colorResource(id = R.color.text),
             selectedTextColor = colorResource(id = R.color.text),

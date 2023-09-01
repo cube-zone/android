@@ -1,34 +1,19 @@
 package dev.android.cubestudio.screens
 
-import android.graphics.drawable.Icon
-import android.util.Log
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.Email
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Surface
@@ -44,9 +29,6 @@ import dev.android.cubestudio.R
 import dev.android.cubestudio.ui.theme.CubeStudioTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MenuDefaults
-import androidx.compose.material3.MenuItemColors
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
@@ -56,15 +38,15 @@ import kotlinx.coroutines.delay
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.unit.TextUnit
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import dev.android.cubestudio.scrambleTypes.scrambleThree
+import dev.android.cubestudio.components.EditCommentDialog
+import dev.android.cubestudio.databases.solves.SolveEvent
+import dev.android.cubestudio.databases.solves.SolveState
 import dev.android.cubestudio.scrambleTypes.Scramble
 import kotlin.math.floor
 
@@ -94,7 +76,6 @@ class TimerObject() {
     var startTime: Long = 1689445680153
     fun startTimer(): Long {
         startTime = System.currentTimeMillis()
-        Log.d("DEBUG", startTime.toString())
         return startTime
     }
     fun getCurrentTime(): Long {
@@ -117,7 +98,7 @@ fun Timer(time: String, modifier: Modifier = Modifier){
         text = time,
         fontSize = 55.sp,
         textAlign = TextAlign.Center,
-        color = colorResource(R.color.text),
+        color = if (time != "DNF") colorResource(R.color.text) else colorResource(id = R.color.secondary),
         fontFamily = azaretMono
     )
 }
@@ -135,12 +116,17 @@ fun Scramble(scramble: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun LastTimeOptions(plusTwo: () -> Unit) {
+fun LastTimeOptions(
+    plusTwo: () -> Unit,
+    dnf: () -> Unit,
+    deleteSolve: () -> Unit,
+    addComment: () -> Unit
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
-        TextButton(onClick = { /*TODO*/ }) {
+        TextButton(onClick = addComment) {
             Icon (
                 painter = painterResource(id = R.drawable.baseline_add_comment_24),
                 contentDescription = null,
@@ -154,14 +140,14 @@ fun LastTimeOptions(plusTwo: () -> Unit) {
                 fontSize = 18.sp
             )
         }
-        TextButton(onClick = { /*TODO*/ }) {
+        TextButton(onClick = dnf) {
             Text(
                 "DNF",
                 color = colorResource(id = R.color.primary),
                 fontSize = 18.sp
             )
         }
-        TextButton(onClick = { /*TODO*/ }) {
+        TextButton(onClick = deleteSolve) {
             Icon(
                 imageVector = Icons.Default.Delete,
                 contentDescription = null,
@@ -171,36 +157,14 @@ fun LastTimeOptions(plusTwo: () -> Unit) {
     }
 }
 
-/*
-@Composable
-fun ScrambleTypeDropdown(expanded:Boolean):Boolean {
-    var localExpanded = expanded
-    println("AKDNWDKAWKDNAWKDAKDWNKJANW")
-    DropdownMenu(x
-        expanded = localExpanded,
-        onDismissRequest = { localExpanded = false; println("dismissed") },
-    ) {
-        scrambleNames.forEach {scrambleType ->
-            DropdownMenuItem(
-                text = {Text(scrambleType)},
-                onClick = {
-                    localExpanded = false
-                    currentScrambleType = scrambleType
-                },
-                contentPadding = PaddingValues(horizontal = 15.dp),
-                modifier = Modifier.sizeIn(maxHeight = 35.dp)
-            )
-        }
-    }
-    println(localExpanded)
-    return localExpanded
-}
-
- */
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TimerScreen(session: String, paddingValues: PaddingValues, modifier: Modifier = Modifier) {
+fun TimerScreen(
+    paddingValues: PaddingValues,
+    modifier: Modifier = Modifier,
+    state:SolveState,
+    onEvent: (SolveEvent) -> Unit
+) {
     val timerObject by remember { mutableStateOf(TimerObject())}
     var time by remember { mutableStateOf(0L) }
     var lastTime by remember { mutableStateOf(0L)}
@@ -208,16 +172,50 @@ fun TimerScreen(session: String, paddingValues: PaddingValues, modifier: Modifie
     val currentScramble by remember {mutableStateOf( Current(Type = "3x3") )}
     var scramble by remember{ mutableStateOf(Scramble(currentScramble.Type)) }
 
+    var lastTimePenalisation by remember { mutableStateOf(0) }
+    var dnf by remember { mutableStateOf(false) }
+    var lastSolveIsDeleted by remember { mutableStateOf(false) }
+
+    var lastSolve by remember { mutableStateOf(if (state.solves.isNotEmpty())state.solves[0] else null)}
+
     val view = LocalView.current
     val windowInsets = remember(view) { ViewCompat.getRootWindowInsets(view) }
     val insetTypes = WindowInsetsCompat.Type.systemBars()
     val insets = windowInsets?.getInsets(insetTypes)
 
-    fun plusTwo() {lastTime += 2000}
+    fun plusTwo() {
+        lastSolve = state.solves[0]
+        if (lastSolve != null) {
+            lastTimePenalisation += 2000
+            onEvent(SolveEvent.PenaliseSolve(lastSolve!!, lastTimePenalisation))
+        }
+    }
+    fun dnf() {
+        lastSolve = state.solves[0]
+        if (lastSolve != null) {
+            dnf = !dnf
+            onEvent(SolveEvent.DnfSolve(lastSolve!!, dnf))
+        }
+    }
+    fun deleteSolve() {
+        lastSolve = state.solves[0]
+        if (lastSolve != null && !lastSolveIsDeleted) {
+            onEvent(SolveEvent.DeleteSolve(lastSolve!!))
+            lastSolve = null
+            lastTime = 0
+            lastSolveIsDeleted = true
+        }
+    }
+    fun addComment() {
+        if (lastSolve != null) {
+            onEvent(SolveEvent.ShowEditCommentDialog)
+        }
+    }
+
     LaunchedEffect(currentlyTiming) {
         while (currentlyTiming) {
             time = timerObject.getCurrentTime()
-            lastTime = time
+            //lastTime = time
             delay(10)
         }
     }
@@ -225,16 +223,34 @@ fun TimerScreen(session: String, paddingValues: PaddingValues, modifier: Modifie
         Surface(
             color = colorResource(id = R.color.mainBg),
             onClick = {
-                println(currentScramble)
                 if (!currentlyTiming) {
                     timerObject.startTimer()
+                    lastTimePenalisation = 0
+                    dnf = false
+                    lastSolveIsDeleted = false
                 } else {
+                    lastTime = time
+                    print(lastTime)
+                    println(scramble)
+                    onEvent(SolveEvent.SetSolve(
+                        createdAt = System.currentTimeMillis(),
+                        scramble = scramble,
+                        sessionId = 0,
+                        time = lastTime,
+                        id = (state.solves[0].solveId!! + 1)
+                    ))
                     scramble = Scramble(currentScramble.Type)
-                    //code to save solve
+                    onEvent(SolveEvent.SaveSolve)
+                    lastSolve = state.solves[0]
+                    for (i in (0..5)) println(state.solves[i])
                 }
                 currentlyTiming = !currentlyTiming
             },
         ) {
+            println()
+            if (state.isEditingComment && lastSolve != null) {
+                EditCommentDialog(state = state, onEvent = onEvent, solve = lastSolve!!)
+            }
             Column(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.SpaceBetween,
@@ -263,7 +279,6 @@ fun TimerScreen(session: String, paddingValues: PaddingValues, modifier: Modifie
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(currentScramble.Type)
-                                println(currentScramble.Type)
                                 Icon(Icons.Default.ArrowDropDown, null, tint = colorResource(id = R.color.text))
                             }
                         }
@@ -298,12 +313,29 @@ fun TimerScreen(session: String, paddingValues: PaddingValues, modifier: Modifie
                         Modifier.padding(vertical = 20.dp)
                     )
                     if (!currentlyTiming) {
-                        Timer(time = formatTime(time = lastTime.toFloat()))
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            if (!dnf) {
+                                Timer(time = formatTime(time = (lastTime + lastTimePenalisation).toFloat()))
+                                if (lastTimePenalisation != 0) Text(
+                                    text = "(+${lastTimePenalisation / 1000})",
+                                    color = colorResource(id = R.color.secondary),
+                                    modifier = Modifier.padding(5.dp)
+                                )
+                            }
+                            else {
+                                Timer(time = "DNF")
+                            }
+                        }
                     }
                     else {
                         Timer(time = formatTime(time = time.toFloat()))
                     }
-                    if (!currentlyTiming)LastTimeOptions(plusTwo = {plusTwo()})
+                    if (!currentlyTiming) LastTimeOptions(
+                        plusTwo = {plusTwo()},
+                        dnf = {dnf()},
+                        deleteSolve = {deleteSolve()},
+                        addComment = {addComment()}
+                    )
                 }
                 // TODO Stats
             }
