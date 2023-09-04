@@ -73,7 +73,7 @@ fun Logo(name: String) {
     val insetTypes = WindowInsetsCompat.Type.systemBars()
     val insets = windowInsets?.getInsets(insetTypes)
     Log.d("DEBUG", insets.toString())
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(10.dp, (insets?.top!!/2+10).dp)) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(10.dp)) {
         Image(
             painter = painterResource(id = R.drawable.cubestudio_logo),
             contentDescription = null,
@@ -82,7 +82,6 @@ fun Logo(name: String) {
         Text(
             text = name,
             fontSize = 16.sp,
-            color = colorResource(R.color.text),
             modifier = Modifier.padding(10.dp, 0.dp),
             fontFamily = poppinsSemiBold
         )
@@ -98,10 +97,7 @@ fun BottomBar(navController: NavHostController) {
     )
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
-    NavigationBar(
-        containerColor = colorResource(id = R.color.secondaryBg),
-        contentColor = colorResource(id = R.color.text),
-    ) {
+    NavigationBar() {
         screens.forEach {screen ->
             AddItem(screen = screen, currentDestination = currentDestination, navController = navController)
         }
@@ -123,13 +119,6 @@ fun RowScope.AddItem (
             )
         },
         selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
-        colors = NavigationBarItemDefaults.colors(
-            selectedIconColor = colorResource(id = R.color.text),
-            selectedTextColor = colorResource(id = R.color.text),
-            unselectedIconColor = colorResource(id = R.color.secondaryText),
-            unselectedTextColor = colorResource(id = R.color.secondaryText),
-            indicatorColor = colorResource(id = R.color.primary)
-        ),
         onClick = {
             navController.navigate(screen.route)
         }

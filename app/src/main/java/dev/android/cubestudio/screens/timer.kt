@@ -1,19 +1,30 @@
 package dev.android.cubestudio.screens
 
+import android.widget.GridLayout
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Surface
@@ -26,9 +37,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.android.cubestudio.R
-import dev.android.cubestudio.ui.theme.CubeStudioTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
@@ -44,10 +55,26 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.compose.CubeStudioTheme
 import dev.android.cubestudio.components.EditCommentDialog
+import dev.android.cubestudio.components.TimerStats
+import dev.android.cubestudio.databases.solves.Solve
 import dev.android.cubestudio.databases.solves.SolveEvent
 import dev.android.cubestudio.databases.solves.SolveState
 import dev.android.cubestudio.scrambleTypes.Scramble
+import dev.android.cubestudio.ui.theme.BottomBarScreen
+import dev.android.cubestudio.ui.theme.md_theme_dark_background
+import dev.android.cubestudio.ui.theme.md_theme_dark_inversePrimary
+import dev.android.cubestudio.ui.theme.md_theme_dark_onBackground
+import dev.android.cubestudio.ui.theme.md_theme_dark_onPrimary
+import dev.android.cubestudio.ui.theme.md_theme_dark_onSecondary
+import dev.android.cubestudio.ui.theme.md_theme_dark_onTertiary
+import dev.android.cubestudio.ui.theme.md_theme_dark_primaryContainer
+import dev.android.cubestudio.ui.theme.md_theme_dark_scrim
+import dev.android.cubestudio.ui.theme.md_theme_dark_secondaryContainer
+import dev.android.cubestudio.ui.theme.md_theme_dark_surface
+import dev.android.cubestudio.ui.theme.md_theme_dark_surfaceVariant
+import dev.android.cubestudio.ui.theme.md_theme_light_background
 import kotlin.math.floor
 
 val robotoMono = FontFamily(Font(resId = R.font.robotomonomedium))
@@ -109,12 +136,14 @@ fun Scramble(scramble: String, modifier: Modifier = Modifier) {
         text = scramble,
         fontSize = 18.sp,
         textAlign = TextAlign.Center,
-        color = colorResource(id = R.color.text),
         modifier = Modifier.padding(25.dp, 0.dp),
         fontFamily = poppins
     )
 }
+@Composable
+fun ScrambleOptions() {
 
+}
 @Composable
 fun LastTimeOptions(
     plusTwo: () -> Unit,
@@ -130,20 +159,17 @@ fun LastTimeOptions(
             Icon (
                 painter = painterResource(id = R.drawable.baseline_add_comment_24),
                 contentDescription = null,
-                tint = colorResource(id = R.color.primary)
             )
         }
         TextButton(onClick = plusTwo) {
             Text(
                 "+2",
-                color = colorResource(id = R.color.primary),
                 fontSize = 18.sp
             )
         }
         TextButton(onClick = dnf) {
             Text(
                 "DNF",
-                color = colorResource(id = R.color.primary),
                 fontSize = 18.sp
             )
         }
@@ -151,10 +177,29 @@ fun LastTimeOptions(
             Icon(
                 imageVector = Icons.Default.Delete,
                 contentDescription = null,
-                tint = colorResource(id = R.color.primary)
             )
         }
     }
+}
+
+@Composable
+fun AverageStat(
+    name: String,
+    currentAvg: String,
+    bestAvg: String
+) {
+    Row {
+
+    }
+}
+fun calculateAvg(range: Int, solves: List<Solve>): String? {
+    if (solves.size >= range) {
+        var sum = 0L
+        for (i in 0..range) {
+            sum += solves[i].time
+        }
+        return formatTime(sum/range.toFloat())
+    } else return null
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -203,6 +248,7 @@ fun TimerScreen(
             onEvent(SolveEvent.DeleteSolve(lastSolve!!))
             lastSolve = null
             lastTime = 0
+            lastTimePenalisation = 0
             lastSolveIsDeleted = true
         }
     }
@@ -221,7 +267,6 @@ fun TimerScreen(
     }
     CubeStudioTheme() {
         Surface(
-            color = colorResource(id = R.color.mainBg),
             onClick = {
                 if (!currentlyTiming) {
                     timerObject.startTimer()
@@ -247,97 +292,98 @@ fun TimerScreen(
                 currentlyTiming = !currentlyTiming
             },
         ) {
-            println()
             if (state.isEditingComment && lastSolve != null) {
                 EditCommentDialog(state = state, onEvent = onEvent, solve = lastSolve!!)
             }
             Column(
-                horizontalAlignment = Alignment.Start,
+                horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier
+                    .fillMaxSize()
                     .padding(
-                        top = paddingValues.calculateTopPadding()-(insets?.top!!/2).dp,
+                        top = paddingValues.calculateTopPadding(),
                         bottom = paddingValues.calculateBottomPadding()
                     )
             ) {
-                if (!currentlyTiming) Row (modifier = Modifier.padding(5.dp, 0.dp)) {
-                    //start
-                    var scrambleTypeButtonExpanded by remember { mutableStateOf(false) }
-                    Box(
-                        modifier = Modifier
-                            .wrapContentSize(Alignment.TopStart)
-                    ) {
-                        OutlinedButton(
-                            onClick = { scrambleTypeButtonExpanded = true },
-                            border = BorderStroke(1.dp, colorResource(id = R.color.primary)),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Transparent,
-                                contentColor = colorResource(id = R.color.text)
-                            ),
-                            modifier = Modifier.padding(5.dp, 0.dp),
-                            contentPadding = PaddingValues(start = 16.dp, end = 8.dp),
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(currentScramble.Type)
-                                Icon(Icons.Default.ArrowDropDown, null, tint = colorResource(id = R.color.text))
-                            }
-                        }
-                        DropdownMenu(
-                            expanded = scrambleTypeButtonExpanded,
-                            onDismissRequest = { scrambleTypeButtonExpanded = false},
-                        ) {
-                            scrambleNames.forEach {scrambleType ->
-                                DropdownMenuItem(
-                                    text = {Text(scrambleType)},
-                                    onClick = {
-                                        scrambleTypeButtonExpanded = false
-                                        currentScramble.Type = scrambleType
-                                        scramble = Scramble(scrambleType)
-                                    },
-                                    contentPadding = PaddingValues(horizontal = 15.dp),
-                                    modifier = Modifier.sizeIn(maxHeight = 35.dp)
-                                )
-                            }
-                        }
-                    }
-                    //end
-                }
-
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.fillMaxSize()
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier
+                        .height(IntrinsicSize.Max)
+                        .weight(1f)
                 ) {
-                    Scramble(
-                        scramble = scramble,
-                        Modifier.padding(vertical = 20.dp)
-                    )
-                    if (!currentlyTiming) {
-                        Row(verticalAlignment = Alignment.Bottom) {
-                            if (!dnf) {
-                                Timer(time = formatTime(time = (lastTime + lastTimePenalisation).toFloat()))
-                                if (lastTimePenalisation != 0) Text(
-                                    text = "(+${lastTimePenalisation / 1000})",
-                                    color = colorResource(id = R.color.secondary),
-                                    modifier = Modifier.padding(5.dp)
-                                )
+                    if (!currentlyTiming) Row(modifier = Modifier.padding(5.dp, 0.dp)) {
+                        var scrambleTypeButtonExpanded by remember { mutableStateOf(false) }
+                        Box(
+                            modifier = Modifier
+                                .wrapContentSize(Alignment.TopStart)
+                        ) {
+                            OutlinedButton(
+                                onClick = { scrambleTypeButtonExpanded = true },
+                                modifier = Modifier.padding(5.dp, 0.dp),
+                                contentPadding = PaddingValues(start = 16.dp, end = 8.dp),
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(currentScramble.Type)
+                                    Icon(Icons.Default.ArrowDropDown, null)
+                                }
                             }
-                            else {
-                                Timer(time = "DNF")
+                            DropdownMenu(
+                                expanded = scrambleTypeButtonExpanded,
+                                onDismissRequest = { scrambleTypeButtonExpanded = false },
+                            ) {
+                                scrambleNames.forEach { scrambleType ->
+                                    DropdownMenuItem(
+                                        text = { Text(scrambleType) },
+                                        onClick = {
+                                            scrambleTypeButtonExpanded = false
+                                            currentScramble.Type = scrambleType
+                                            scramble = Scramble(scrambleType)
+                                        },
+                                        contentPadding = PaddingValues(horizontal = 15.dp),
+                                        modifier = Modifier.sizeIn(maxHeight = 35.dp)
+                                    )
+                                }
                             }
                         }
                     }
-                    else {
-                        Timer(time = formatTime(time = time.toFloat()))
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Scramble(
+                            scramble = scramble,
+                            Modifier.padding(vertical = 20.dp)
+                        )
+                        if (!currentlyTiming) {
+                            Row(verticalAlignment = Alignment.Bottom) {
+                                if (!dnf) {
+                                    Timer(time = formatTime(time = (lastTime + lastTimePenalisation).toFloat()))
+                                    if (lastTimePenalisation != 0) Text(
+                                        text = "(+${lastTimePenalisation / 1000})",
+                                        modifier = Modifier.padding(5.dp),
+                                        color = Color.Red
+                                    )
+                                } else {
+                                    Timer(time = "DNF")
+                                }
+                            }
+                        } else {
+                            Timer(time = formatTime(time = time.toFloat()))
+                        }
+                        if (!currentlyTiming) {
+                            LastTimeOptions(
+                                plusTwo = { plusTwo() },
+                                dnf = { dnf() },
+                                deleteSolve = { deleteSolve() },
+                                addComment = { addComment() }
+                            )
+                        }
                     }
-                    if (!currentlyTiming) LastTimeOptions(
-                        plusTwo = {plusTwo()},
-                        dnf = {dnf()},
-                        deleteSolve = {deleteSolve()},
-                        addComment = {addComment()}
-                    )
                 }
-                // TODO Stats
+                if (!currentlyTiming) TimerStats(state.solves, modifier = Modifier)
             }
         }
     }

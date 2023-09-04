@@ -27,6 +27,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.room.Room
+import com.example.compose.CubeStudioTheme
 import dev.android.cubestudio.R
 import dev.android.cubestudio.ui.theme.MainScreen
 import dev.android.cubestudio.ui.theme.poppins
@@ -67,20 +68,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowCompat.setDecorFitsSystemWindows(window, true)
         setContent {
             val systemUiController = rememberSystemUiController()
-            val useDarkIcons = false
-            val secondaryBg = colorResource(R.color.secondaryBg)
 
-            SideEffect {
-                systemUiController.setSystemBarsColor(
-                    color = secondaryBg,
-                    darkIcons = useDarkIcons
-                )
-            }
-
-            MaterialTheme(typography = myTypography) {
+            CubeStudioTheme() {
                 val state by viewModel.state.collectAsState()
                 MainScreen(state = state, onEvent = viewModel::onEvent)
             }
