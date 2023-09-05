@@ -9,8 +9,8 @@ fun scrambleMega (rowLength: Int = 10, rowNum: Int = 7): String {
         for (i in 1..rowLength) {
             res += if (isR) "R"
             else "D"
-            res += if (Random.nextBoolean()) "++ "
-            else "-- "
+            res += if (Random.nextBoolean()) "+ "
+            else "- "
             isR = !isR
         }
         res += if (Random.nextBoolean()) "U\n"

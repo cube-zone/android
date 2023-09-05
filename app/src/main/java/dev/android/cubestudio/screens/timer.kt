@@ -2,6 +2,7 @@ package dev.android.cubestudio.screens
 
 import android.widget.GridLayout
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,14 +13,18 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
@@ -48,11 +53,15 @@ import androidx.compose.runtime.remember
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.compose.CubeStudioTheme
@@ -125,20 +134,30 @@ fun Timer(time: String, modifier: Modifier = Modifier){
         text = time,
         fontSize = 55.sp,
         textAlign = TextAlign.Center,
-        color = if (time != "DNF") colorResource(R.color.text) else colorResource(id = R.color.secondary),
+        color = if (time != "DNF") colorResource(R.color.text) else Color.Red,
         fontFamily = azaretMono
     )
 }
 
 @Composable
 fun Scramble(scramble: String, modifier: Modifier = Modifier) {
-    Text(
-        text = scramble,
-        fontSize = 18.sp,
-        textAlign = TextAlign.Center,
-        modifier = Modifier.padding(25.dp, 0.dp),
-        fontFamily = poppins
-    )
+    val textStyleBody1 = MaterialTheme.typography.bodyMedium
+    var textStyle by remember { mutableStateOf(textStyleBody1) }
+    val brush = Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, Color.Transparent))
+    Box {
+        Text(
+            text = scramble,
+            fontSize = 18.sp,
+            textAlign = TextAlign.Center,
+            style = textStyle,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .heightIn(0.dp, 210.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(25.dp, 0.dp),
+            fontFamily = poppins,
+        )
+    }
 }
 @Composable
 fun ScrambleOptions() {
@@ -192,15 +211,6 @@ fun AverageStat(
 
     }
 }
-fun calculateAvg(range: Int, solves: List<Solve>): String? {
-    if (solves.size >= range) {
-        var sum = 0L
-        for (i in 0..range) {
-            sum += solves[i].time
-        }
-        return formatTime(sum/range.toFloat())
-    } else return null
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -221,8 +231,8 @@ fun TimerScreen(
     var dnf by remember { mutableStateOf(false) }
     var lastSolveIsDeleted by remember { mutableStateOf(false) }
 
-    var lastSolve by remember { mutableStateOf(if (state.solves.isNotEmpty())state.solves[0] else null)}
-
+    var lastSolve:Solve? by remember { mutableStateOf(null)}
+    println(lastSolve)
     val view = LocalView.current
     val windowInsets = remember(view) { ViewCompat.getRootWindowInsets(view) }
     val insetTypes = WindowInsetsCompat.Type.systemBars()
@@ -353,7 +363,7 @@ fun TimerScreen(
                         verticalArrangement = Arrangement.Center,
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        Scramble(
+                        if (!currentlyTiming) Scramble(
                             scramble = scramble,
                             Modifier.padding(vertical = 20.dp)
                         )

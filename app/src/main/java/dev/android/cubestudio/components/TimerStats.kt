@@ -21,8 +21,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.android.cubestudio.databases.solves.Solve
-import dev.android.cubestudio.screens.calculateAvg
+import dev.android.cubestudio.screens.formatTime
 
+fun calculateAvg(range: Int, solves: List<Solve>): String? {
+    if (solves.size >= range) {
+        var sum = 0L
+        for (i in 0..range) {
+            sum += solves[i].time
+        }
+        return formatTime(sum/range.toFloat())
+    } else return null
+}
 @Composable
 fun TimerStats(solves: List<Solve>, modifier: Modifier) {
     Box(modifier = modifier) {
