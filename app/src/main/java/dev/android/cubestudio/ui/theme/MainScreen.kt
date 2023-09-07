@@ -39,6 +39,9 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import dev.android.cubestudio.MainActivity
+import dev.android.cubestudio.databases.sessions.Session
+import dev.android.cubestudio.databases.sessions.SessionEvent
+import dev.android.cubestudio.databases.sessions.SessionState
 import dev.android.cubestudio.databases.solves.SolveEvent
 import dev.android.cubestudio.databases.solves.SolveState
 
@@ -48,8 +51,10 @@ val poppinsSemiBold = FontFamily(Font(resId = R.font.poppinssemibold))
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
-    state: SolveState,
-    onEvent: (SolveEvent) -> Unit
+    solveState: SolveState,
+    sessionState: SessionState,
+    onSolveEvent: (SolveEvent) -> Unit,
+    onSessionEvent: (SessionEvent) -> Unit
 ) {
     val navController = rememberNavController()
     Scaffold(
@@ -60,8 +65,10 @@ fun MainScreen(
                 navController = navController,
                 paddingValues = paddingValues,
                 mainActivity = MainActivity(),
-                state = state,
-                onEvent = onEvent
+                solveState = solveState,
+                onSolveEvent = onSolveEvent,
+                sessionState = sessionState,
+                onSessionEvent = onSessionEvent
             )
         }
     )

@@ -78,7 +78,7 @@ fun TimerStats(solves: List<Solve>, modifier: Modifier) {
                         textAlign = TextAlign.Center
                     )
                     Text(
-                        "Last Avg\n${calculateAvg(5, solves) ?: "-"}" +
+                        "Last Average\n${calculateAvg(5, solves) ?: "-"}" +
                                 "\n${calculateAvg(12, solves) ?: "-"}" +
                                 "\n${calculateAvg(50, solves) ?: "-"}" +
                                 "\n${calculateAvg(100, solves) ?: "-"}",
@@ -88,7 +88,7 @@ fun TimerStats(solves: List<Solve>, modifier: Modifier) {
                         textAlign = TextAlign.Center
                     )
                     Text(
-                        "Best Avg\n${calculateAvg(5, solves) ?: "-"}" +
+                        "Best Average\n${calculateAvg(5, solves) ?: "-"}" +
                                 "\n${calculateAvg(12, solves) ?: "-"}" +
                                 "\n${calculateAvg(50, solves) ?: "-"}" +
                                 "\n${calculateAvg(100, solves) ?: "-"}",

@@ -1,35 +1,24 @@
 package dev.android.cubestudio.screens
 
-import android.widget.GridLayout
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Surface
@@ -53,8 +42,6 @@ import androidx.compose.runtime.remember
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
@@ -65,25 +52,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.compose.CubeStudioTheme
+import dev.android.cubestudio.components.AddSessionDialog
 import dev.android.cubestudio.components.EditCommentDialog
 import dev.android.cubestudio.components.TimerStats
+import dev.android.cubestudio.databases.sessions.Session
+import dev.android.cubestudio.databases.sessions.SessionEvent
+import dev.android.cubestudio.databases.sessions.SessionState
 import dev.android.cubestudio.databases.solves.Solve
 import dev.android.cubestudio.databases.solves.SolveEvent
 import dev.android.cubestudio.databases.solves.SolveState
 import dev.android.cubestudio.scrambleTypes.Scramble
-import dev.android.cubestudio.ui.theme.BottomBarScreen
-import dev.android.cubestudio.ui.theme.md_theme_dark_background
-import dev.android.cubestudio.ui.theme.md_theme_dark_inversePrimary
-import dev.android.cubestudio.ui.theme.md_theme_dark_onBackground
-import dev.android.cubestudio.ui.theme.md_theme_dark_onPrimary
-import dev.android.cubestudio.ui.theme.md_theme_dark_onSecondary
-import dev.android.cubestudio.ui.theme.md_theme_dark_onTertiary
-import dev.android.cubestudio.ui.theme.md_theme_dark_primaryContainer
-import dev.android.cubestudio.ui.theme.md_theme_dark_scrim
-import dev.android.cubestudio.ui.theme.md_theme_dark_secondaryContainer
-import dev.android.cubestudio.ui.theme.md_theme_dark_surface
-import dev.android.cubestudio.ui.theme.md_theme_dark_surfaceVariant
-import dev.android.cubestudio.ui.theme.md_theme_light_background
 import kotlin.math.floor
 
 val robotoMono = FontFamily(Font(resId = R.font.robotomonomedium))
@@ -160,10 +138,6 @@ fun Scramble(scramble: String, modifier: Modifier = Modifier) {
     }
 }
 @Composable
-fun ScrambleOptions() {
-
-}
-@Composable
 fun LastTimeOptions(
     plusTwo: () -> Unit,
     dnf: () -> Unit,
@@ -201,24 +175,15 @@ fun LastTimeOptions(
     }
 }
 
-@Composable
-fun AverageStat(
-    name: String,
-    currentAvg: String,
-    bestAvg: String
-) {
-    Row {
-
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimerScreen(
     paddingValues: PaddingValues,
     modifier: Modifier = Modifier,
-    state:SolveState,
-    onEvent: (SolveEvent) -> Unit
+    solveState: SolveState,
+    sessionState: SessionState,
+    onSolveEvent: (SolveEvent) -> Unit,
+    onSessionEvent: (SessionEvent) -> Unit
 ) {
     val timerObject by remember { mutableStateOf(TimerObject())}
     var time by remember { mutableStateOf(0L) }
@@ -232,6 +197,8 @@ fun TimerScreen(
     var lastSolveIsDeleted by remember { mutableStateOf(false) }
 
     var lastSolve:Solve? by remember { mutableStateOf(null)}
+
+    var currentSession: Session? by remember { mutableStateOf(null) }
     println(lastSolve)
     val view = LocalView.current
     val windowInsets = remember(view) { ViewCompat.getRootWindowInsets(view) }
@@ -239,23 +206,23 @@ fun TimerScreen(
     val insets = windowInsets?.getInsets(insetTypes)
 
     fun plusTwo() {
-        lastSolve = state.solves[0]
+        lastSolve = solveState.solves[0]
         if (lastSolve != null) {
             lastTimePenalisation += 2000
-            onEvent(SolveEvent.PenaliseSolve(lastSolve!!, lastTimePenalisation))
+            onSolveEvent(SolveEvent.PenaliseSolve(lastSolve!!, lastTimePenalisation))
         }
     }
     fun dnf() {
-        lastSolve = state.solves[0]
+        lastSolve = solveState.solves[0]
         if (lastSolve != null) {
             dnf = !dnf
-            onEvent(SolveEvent.DnfSolve(lastSolve!!, dnf))
+            onSolveEvent(SolveEvent.DnfSolve(lastSolve!!, dnf))
         }
     }
     fun deleteSolve() {
-        lastSolve = state.solves[0]
+        lastSolve = solveState.solves[0]
         if (lastSolve != null && !lastSolveIsDeleted) {
-            onEvent(SolveEvent.DeleteSolve(lastSolve!!))
+            onSolveEvent(SolveEvent.DeleteSolve(lastSolve!!))
             lastSolve = null
             lastTime = 0
             lastTimePenalisation = 0
@@ -264,7 +231,7 @@ fun TimerScreen(
     }
     fun addComment() {
         if (lastSolve != null) {
-            onEvent(SolveEvent.ShowEditCommentDialog)
+            onSolveEvent(SolveEvent.ShowEditCommentDialog)
         }
     }
 
@@ -287,24 +254,29 @@ fun TimerScreen(
                     lastTime = time
                     print(lastTime)
                     println(scramble)
-                    onEvent(SolveEvent.SetSolve(
+                    onSolveEvent(SolveEvent.SetSolve(
                         createdAt = System.currentTimeMillis(),
                         scramble = scramble,
-                        sessionId = 0,
+                        sessionId = currentSession?.sessionId ?: 0,
                         time = lastTime,
-                        id = (state.solves[0].solveId!! + 1)
+                        id = (solveState.solves[0].solveId!! + 1)
                     ))
                     scramble = Scramble(currentScramble.Type)
-                    onEvent(SolveEvent.SaveSolve)
-                    lastSolve = state.solves[0]
-                    for (i in (0..5)) println(state.solves[i])
+                    onSolveEvent(SolveEvent.SaveSolve)
+                    lastSolve = solveState.solves[0]
+                    for (i in (0..5)) println(solveState.solves[i])
                 }
                 currentlyTiming = !currentlyTiming
             },
         ) {
-            if (state.isEditingComment && lastSolve != null) {
-                EditCommentDialog(state = state, onEvent = onEvent, solve = lastSolve!!)
+            if (solveState.isEditingComment && lastSolve != null) {
+                EditCommentDialog(state = solveState, onEvent = onSolveEvent, solve = lastSolve!!)
             }
+
+            if (sessionState.isAddingSession) {
+                AddSessionDialog(state = sessionState, onEvent = onSessionEvent, scrambleType = currentScramble.Type)
+            }
+
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween,
@@ -356,6 +328,50 @@ fun TimerScreen(
                                 }
                             }
                         }
+                        var selectSessionButtonExpanded by remember { mutableStateOf(false) }
+                        Box(
+                            modifier = Modifier
+                                .wrapContentSize(Alignment.TopStart)
+                        ) {
+                            OutlinedButton(
+                                onClick = { selectSessionButtonExpanded = true },
+                                modifier = Modifier.padding(5.dp, 0.dp),
+                                contentPadding = PaddingValues(start = 16.dp, end = 8.dp),
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(currentSession?.sessionName ?: "")
+                                    Icon(Icons.Default.ArrowDropDown, null)
+                                }
+                            }
+                            DropdownMenu(
+                                expanded = selectSessionButtonExpanded,
+                                onDismissRequest = { selectSessionButtonExpanded = false },
+                            ) {
+                                Log.d("DEBUG","Sessions: ${sessionState.sessions}")
+                                sessionState.sessions.forEach { session ->
+                                    DropdownMenuItem(
+                                        text = { Text(session.sessionName) },
+                                        onClick = {
+                                            selectSessionButtonExpanded = false
+                                            currentSession = session
+                                        },
+                                        contentPadding = PaddingValues(horizontal = 15.dp),
+                                        modifier = Modifier.sizeIn(maxHeight = 35.dp)
+                                    )
+                                }
+                                DropdownMenuItem(
+                                    text = { Text("New Session") },
+                                    trailingIcon = {Icon(Icons.Default.Add, null)},
+                                    onClick = {
+                                        onSessionEvent(SessionEvent.ShowAddSessionDialog)
+                                        print(sessionState.isAddingSession)
+                                        selectSessionButtonExpanded = false
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 15.dp),
+                                    modifier = Modifier.sizeIn(maxHeight = 35.dp)
+                                )
+                            }
+                        }
                     }
 
                     Column(
@@ -393,7 +409,7 @@ fun TimerScreen(
                         }
                     }
                 }
-                if (!currentlyTiming) TimerStats(state.solves, modifier = Modifier)
+                if (!currentlyTiming) TimerStats(solveState.solves, modifier = Modifier)
             }
         }
     }

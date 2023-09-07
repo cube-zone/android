@@ -10,4 +10,5 @@ data class Session (
     val createdAt: Long,
     val sessionName: String,
     val scrambleType: String,
+    val lastUsedAt: Int = 0
 )

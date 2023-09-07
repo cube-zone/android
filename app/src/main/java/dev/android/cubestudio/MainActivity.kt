@@ -4,34 +4,23 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Row
-import androidx.compose.ui.Alignment
 import androidx.core.view.WindowCompat
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.colorResource
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Typography
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.room.Room
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.compose.CubeStudioTheme
-import dev.android.cubestudio.R
 import dev.android.cubestudio.ui.theme.MainScreen
 import dev.android.cubestudio.ui.theme.poppins
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import dev.android.cubestudio.databases.sessions.SessionDatabase
+import dev.android.cubestudio.databases.sessions.SessionViewModel
 import dev.android.cubestudio.databases.solves.SolveDatabase
 import dev.android.cubestudio.databases.solves.SolveViewModel
 
@@ -56,11 +45,31 @@ class MainActivity : ComponentActivity() {
             "solves.db"
         ).build()
     }
-    private val viewModel by viewModels<SolveViewModel> (
+    private val solveViewModel by viewModels<SolveViewModel> (
         factoryProducer = {
             object: ViewModelProvider.Factory {
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     return SolveViewModel(solveDatabase.dao) as T
+                }
+            }
+        }
+    )
+    private val sessionDatabase by lazy {
+        val MIGRATION_1_2 = object : Migration(3, 4) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+            }
+        }
+        Room.databaseBuilder(
+            applicationContext,
+            SessionDatabase::class.java,
+            "session.db",
+        ).createFromAsset("database/session.db").addMigrations(MIGRATION_1_2).build()
+    }
+    private val sessionViewModel by viewModels<SessionViewModel> (
+        factoryProducer = {
+            object: ViewModelProvider.Factory {
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return SessionViewModel(sessionDatabase.dao) as T
                 }
             }
         }
@@ -72,9 +81,15 @@ class MainActivity : ComponentActivity() {
         setContent {
             val systemUiController = rememberSystemUiController()
 
-            CubeStudioTheme() {
-                val state by viewModel.state.collectAsState()
-                MainScreen(state = state, onEvent = viewModel::onEvent)
+            CubeStudioTheme {
+                val solveState by solveViewModel.state.collectAsState()
+                val sessionState by sessionViewModel.state.collectAsState()
+                MainScreen(
+                    solveState = solveState,
+                    sessionState = sessionState,
+                    onSolveEvent = solveViewModel::onSolveEvent,
+                    onSessionEvent = sessionViewModel::onSessionEvent
+                )
             }
         }
     }

@@ -23,7 +23,7 @@ class SolveViewModel(private val dao: SolveDao): ViewModel() {
             solves = solves
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(500), SolveState())
-    fun onEvent(event: SolveEvent) {
+    fun onSolveEvent(event: SolveEvent) {
         when (event) {
             is SolveEvent.SetSolve -> {
                 _state.update { it.copy(
@@ -83,7 +83,6 @@ class SolveViewModel(private val dao: SolveDao): ViewModel() {
                     sessionId = 0,
                     isRandomState = false,
                 ) }
-                println("kdbawkndl${solve}")
             }
             SolveEvent.HideEditCommentDialog -> {
                 _state.update {

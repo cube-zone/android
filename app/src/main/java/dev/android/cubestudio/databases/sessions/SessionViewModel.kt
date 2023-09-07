@@ -18,22 +18,36 @@ class SessionViewModel(private val dao: SessionDao): ViewModel() {
             sessions = sessions
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SessionState())
-    fun onEvent(event: SessionEvent) {
+    fun onSessionEvent(event: SessionEvent) {
         when (event) {
             is SessionEvent.DeleteSession -> {
                 viewModelScope.launch {
                     dao.deleteSession(event.session)
                 }
             }
+            is SessionEvent.SetSession -> {
+                _state.update {
+                    it.copy(
+                        sessionName = event.sessionName,
+                        lastUsedAt = event.lastUsedAt,
+                        scrambleType = event.scrambleType,
+                        createdAt = event.createdAt
+                    )
+                }
+            }
             SessionEvent.SaveSession -> {
                 val sessionName = state.value.sessionName
+                val createdAt = state.value.createdAt
+                val scrambleType = state.value.scrambleType
+                val lastUsedAt = state.value.lastUsedAt
                 if (sessionName.isBlank()) {
                     return
                 }
                 val session = Session(
                     sessionName = sessionName,
-                    createdAt = System.currentTimeMillis(),
-                    scrambleType = "3x3", //TODO make this the current session
+                    createdAt = createdAt,
+                    scrambleType = scrambleType,
+                    lastUsedAt = lastUsedAt
                 )
                 viewModelScope.launch {
                     dao.upsertSession(session)
@@ -41,9 +55,13 @@ class SessionViewModel(private val dao: SessionDao): ViewModel() {
                 _state.update {
                     it.copy(
                         isAddingSession = false,
-                        sessionName = ""
+                        sessionName = "",
+                        scrambleType = "",
+                        createdAt = 0,
+                        lastUsedAt = 0
                     )
                 }
+                println("kdbawkndl${session}")
             }
 
             SessionEvent.HideAddSessionDialog -> {
