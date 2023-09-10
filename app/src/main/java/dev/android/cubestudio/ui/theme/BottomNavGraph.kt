@@ -3,10 +3,12 @@ package dev.android.cubestudio.ui.theme
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.ViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import dev.android.cubestudio.MainActivity
+import dev.android.cubestudio.MainViewModel
 import dev.android.cubestudio.databases.sessions.SessionEvent
 import dev.android.cubestudio.databases.sessions.SessionState
 import dev.android.cubestudio.databases.solves.SolveEvent
@@ -24,7 +26,8 @@ fun BottomNavGraph(
     solveState: SolveState,
     sessionState: SessionState,
     onSolveEvent: (SolveEvent) -> Unit,
-    onSessionEvent: (SessionEvent) -> Unit
+    onSessionEvent: (SessionEvent) -> Unit,
+    viewModel: MainViewModel
 
 ){
     NavHost(
@@ -37,14 +40,15 @@ fun BottomNavGraph(
                solveState = solveState,
                onSolveEvent = onSolveEvent,
                onSessionEvent = onSessionEvent,
-               sessionState = sessionState
+               sessionState = sessionState,
+               viewModel = viewModel
            )
         }
         composable(route = BottomBarScreen.stats.route) {
             StatsScreen()
         }
         composable(route = BottomBarScreen.solves.route) {
-            SolvesScreen()
+            SolvesScreen(solveState = solveState)
         }
     }
 }

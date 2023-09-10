@@ -63,6 +63,10 @@ import dev.android.cubestudio.databases.solves.SolveEvent
 import dev.android.cubestudio.databases.solves.SolveState
 import dev.android.cubestudio.scrambleTypes.Scramble
 import kotlin.math.floor
+import kotlinx.coroutines.flow.collect
+import androidx.lifecycle.lifecycleScope
+import dev.android.cubestudio.MainViewModel
+import kotlinx.coroutines.launch
 
 val robotoMono = FontFamily(Font(resId = R.font.robotomonomedium))
 val poppins = FontFamily(Font(resId = R.font.poppinsmedium))
@@ -178,6 +182,7 @@ fun LastTimeOptions(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimerScreen(
+    viewModel: MainViewModel,
     paddingValues: PaddingValues,
     modifier: Modifier = Modifier,
     solveState: SolveState,
@@ -199,11 +204,13 @@ fun TimerScreen(
     var lastSolve:Solve? by remember { mutableStateOf(null)}
 
     var currentSession: Session? by remember { mutableStateOf(null) }
-    println(lastSolve)
     val view = LocalView.current
     val windowInsets = remember(view) { ViewCompat.getRootWindowInsets(view) }
     val insetTypes = WindowInsetsCompat.Type.systemBars()
     val insets = windowInsets?.getInsets(insetTypes)
+    currentSession = sessionState.sessions.find { it.sessionId == viewModel.state.currentSessionId }
+    currentScramble.Type = viewModel.state.currentScrambleType
+
 
     fun plusTwo() {
         lastSolve = solveState.solves[0]
@@ -252,8 +259,6 @@ fun TimerScreen(
                     lastSolveIsDeleted = false
                 } else {
                     lastTime = time
-                    print(lastTime)
-                    println(scramble)
                     onSolveEvent(SolveEvent.SetSolve(
                         createdAt = System.currentTimeMillis(),
                         scramble = scramble,
@@ -264,7 +269,7 @@ fun TimerScreen(
                     scramble = Scramble(currentScramble.Type)
                     onSolveEvent(SolveEvent.SaveSolve)
                     lastSolve = solveState.solves[0]
-                    for (i in (0..5)) println(solveState.solves[i])
+                    for (i in (0..3)) println(solveState.solves[i])
                 }
                 currentlyTiming = !currentlyTiming
             },
@@ -320,6 +325,7 @@ fun TimerScreen(
                                         onClick = {
                                             scrambleTypeButtonExpanded = false
                                             currentScramble.Type = scrambleType
+                                            viewModel.updateCurrentScrambleType(scrambleType)
                                             scramble = Scramble(scrambleType)
                                         },
                                         contentPadding = PaddingValues(horizontal = 15.dp),
@@ -338,8 +344,9 @@ fun TimerScreen(
                                 modifier = Modifier.padding(5.dp, 0.dp),
                                 contentPadding = PaddingValues(start = 16.dp, end = 8.dp),
                             ) {
+                                Log.d("DEBUG", "sessions: ${sessionState.sessions}")
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(currentSession?.sessionName ?: "")
+                                    Text(currentSession?.sessionName ?: "Not Selected")
                                     Icon(Icons.Default.ArrowDropDown, null)
                                 }
                             }
@@ -347,13 +354,14 @@ fun TimerScreen(
                                 expanded = selectSessionButtonExpanded,
                                 onDismissRequest = { selectSessionButtonExpanded = false },
                             ) {
-                                Log.d("DEBUG","Sessions: ${sessionState.sessions}")
                                 sessionState.sessions.forEach { session ->
                                     DropdownMenuItem(
                                         text = { Text(session.sessionName) },
                                         onClick = {
                                             selectSessionButtonExpanded = false
                                             currentSession = session
+                                            viewModel.updateCurrentSessionId(session.sessionId ?: 0)
+                                            Log.d("DEBUG","sessionId: ${viewModel.state.currentSessionId} target: ${session.sessionId}")
                                         },
                                         contentPadding = PaddingValues(horizontal = 15.dp),
                                         modifier = Modifier.sizeIn(maxHeight = 35.dp)
@@ -364,7 +372,6 @@ fun TimerScreen(
                                     trailingIcon = {Icon(Icons.Default.Add, null)},
                                     onClick = {
                                         onSessionEvent(SessionEvent.ShowAddSessionDialog)
-                                        print(sessionState.isAddingSession)
                                         selectSessionButtonExpanded = false
                                     },
                                     contentPadding = PaddingValues(horizontal = 15.dp),

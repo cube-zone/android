@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import dev.android.cubestudio.MainActivity
+import dev.android.cubestudio.MainViewModel
 import dev.android.cubestudio.databases.sessions.Session
 import dev.android.cubestudio.databases.sessions.SessionEvent
 import dev.android.cubestudio.databases.sessions.SessionState
@@ -54,7 +55,8 @@ fun MainScreen(
     solveState: SolveState,
     sessionState: SessionState,
     onSolveEvent: (SolveEvent) -> Unit,
-    onSessionEvent: (SessionEvent) -> Unit
+    onSessionEvent: (SessionEvent) -> Unit,
+    mainViewModel: MainViewModel
 ) {
     val navController = rememberNavController()
     Scaffold(
@@ -68,7 +70,8 @@ fun MainScreen(
                 solveState = solveState,
                 onSolveEvent = onSolveEvent,
                 sessionState = sessionState,
-                onSessionEvent = onSessionEvent
+                onSessionEvent = onSessionEvent,
+                viewModel = mainViewModel
             )
         }
     )
@@ -98,8 +101,8 @@ fun Logo(name: String) {
 @Composable
 fun BottomBar(navController: NavHostController) {
     val screens = listOf(
-        BottomBarScreen.timer,
         BottomBarScreen.stats,
+        BottomBarScreen.timer,
         BottomBarScreen.solves
     )
     val navBackStackEntry by navController.currentBackStackEntryAsState()

@@ -23,5 +23,5 @@ interface SolveDao {
     fun getAllSolves(): Flow<List<Solve>>
 
     @Query("SELECT * FROM solve WHERE sessionId = :sessionId ORDER BY createdAt DESC")
-    fun getSolvesFromSession(sessionId: String): Flow<List<Solve>>
+    fun getSolvesFromSession(sessionId: Int): Flow<List<Solve>>
 }

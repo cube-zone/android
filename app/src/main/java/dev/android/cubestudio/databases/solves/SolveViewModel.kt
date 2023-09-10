@@ -2,10 +2,12 @@ package dev.android.cubestudio.databases.solves
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.android.cubestudio.MainViewModel
 import dev.android.cubestudio.databases.solves.Solve
 import dev.android.cubestudio.databases.solves.SolveDao
 import dev.android.cubestudio.databases.solves.SolveEvent
 import dev.android.cubestudio.databases.solves.SolveState
+import dev.android.cubestudio.myTypography
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -14,7 +16,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class SolveViewModel(private val dao: SolveDao): ViewModel() {
+class SolveViewModel(private val dao: SolveDao, mainViewModel: MainViewModel): ViewModel() {
+    private val _solvesFromSession = dao.getSolvesFromSession(sessionId = mainViewModel.state.currentSessionId)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
     private val _solves = dao.getAllSolves()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
     private val _state = MutableStateFlow(SolveState())

@@ -1,6 +1,8 @@
 package dev.android.cubestudio
 
+import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -10,6 +12,8 @@ import androidx.compose.material3.Typography
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.text.TextStyle
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.room.Room
@@ -20,9 +24,13 @@ import dev.android.cubestudio.ui.theme.MainScreen
 import dev.android.cubestudio.ui.theme.poppins
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dev.android.cubestudio.databases.sessions.SessionDatabase
+import dev.android.cubestudio.databases.sessions.SessionState
 import dev.android.cubestudio.databases.sessions.SessionViewModel
 import dev.android.cubestudio.databases.solves.SolveDatabase
 import dev.android.cubestudio.databases.solves.SolveViewModel
+import androidx.datastore.preferences.core.Preferences
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 val myTypography = Typography(
     labelMedium = TextStyle(
@@ -37,7 +45,23 @@ val myTypography = Typography(
     ),
 )
 
+// Create a singleton for UserPreferencesRepository
+object UserPreferencesRepositoryProvider {
+    private var instance: UserPreferencesRepository? = null
+
+    fun getInstance(dataStore: DataStore<Preferences>): UserPreferencesRepository {
+        return instance ?: synchronized(this) {
+            instance ?: UserPreferencesRepository(dataStore).also {
+                instance = it
+            }
+        }
+    }
+}
+
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+
 class MainActivity : ComponentActivity() {
+    private lateinit var userPreferencesRepository: UserPreferencesRepository
     private val solveDatabase by lazy {
         Room.databaseBuilder(
             applicationContext,
@@ -45,11 +69,21 @@ class MainActivity : ComponentActivity() {
             "solves.db"
         ).build()
     }
+    private val mainViewModel by viewModels<MainViewModel> (
+        factoryProducer = {
+            object: ViewModelProvider.Factory {
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return MainViewModel(userPreferencesRepository, SavedStateHandle()) as T
+                }
+            }
+        }
+    )
+
     private val solveViewModel by viewModels<SolveViewModel> (
         factoryProducer = {
             object: ViewModelProvider.Factory {
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return SolveViewModel(solveDatabase.dao) as T
+                    return SolveViewModel(solveDatabase.dao, mainViewModel = mainViewModel) as T
                 }
             }
         }
@@ -77,6 +111,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        userPreferencesRepository = UserPreferencesRepositoryProvider.getInstance(dataStore)
+
         WindowCompat.setDecorFitsSystemWindows(window, true)
         setContent {
             val systemUiController = rememberSystemUiController()
@@ -88,9 +124,22 @@ class MainActivity : ComponentActivity() {
                     solveState = solveState,
                     sessionState = sessionState,
                     onSolveEvent = solveViewModel::onSolveEvent,
-                    onSessionEvent = sessionViewModel::onSessionEvent
+                    onSessionEvent = sessionViewModel::onSessionEvent,
+                    mainViewModel = mainViewModel
                 )
             }
         }
+    }
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt("current_session_id", mainViewModel.state.currentSessionId)
+        outState.putString("current_scramble_type", mainViewModel.state.currentScrambleType)
+    }
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        val restoredSessionId = savedInstanceState.getInt("current_session_id")
+        mainViewModel.updateCurrentSessionId(restoredSessionId)
+        val restoredScrambleType = savedInstanceState.getString("current_scramble_type")
+        mainViewModel.updateCurrentScrambleType(restoredScrambleType ?: "3x3")
     }
 }

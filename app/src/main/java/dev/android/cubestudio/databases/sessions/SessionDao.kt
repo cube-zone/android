@@ -19,9 +19,9 @@ interface SessionDao {
     @Update
     suspend fun updateSession(session: Session)
 
-    @Query("SELECT * FROM session ORDER BY createdAt DESC")
+    @Query("SELECT * FROM session ORDER BY lastUsedAt DESC")
     fun getAllSessions(): Flow<List<Session>>
 
-    //@Query("SELECT * FROM session WHERE sessionId = :sessionId ORDER BY createdAt DESC")
-    //suspend fun getSessionsFromSession(sessionId: String): Flow<List<Session>>
+    @Query("SELECT * FROM session WHERE sessionId = :scrambleType ORDER BY lastUsedAt DESC")
+    fun getSessionsFromScrambleType(scrambleType: String): Flow<List<Session>>
 }

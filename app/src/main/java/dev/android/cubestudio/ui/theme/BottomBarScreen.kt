@@ -7,15 +7,15 @@ sealed class BottomBarScreen (
     val title: String,
     val icon: Int
 ){
-    object timer: BottomBarScreen(
-        route = "timer",
-        title = "Timer",
-        icon = R.drawable.outline_timer_24
-    )
     object stats: BottomBarScreen(
         route = "stats",
         title = "Stats",
         icon = R.drawable.outline_trending_up_24
+    )
+    object timer: BottomBarScreen(
+        route = "timer",
+        title = "Timer",
+        icon = R.drawable.outline_timer_24
     )
     object solves: BottomBarScreen(
         route = "solves",
