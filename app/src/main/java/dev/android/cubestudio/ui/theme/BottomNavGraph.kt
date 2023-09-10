@@ -48,7 +48,10 @@ fun BottomNavGraph(
             StatsScreen()
         }
         composable(route = BottomBarScreen.solves.route) {
-            SolvesScreen(solveState = solveState)
+            SolvesScreen(
+                solveState = solveState,
+                paddingValues = paddingValues
+            )
         }
     }
 }
