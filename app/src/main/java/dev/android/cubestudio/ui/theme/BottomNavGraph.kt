@@ -50,7 +50,11 @@ fun BottomNavGraph(
         composable(route = BottomBarScreen.solves.route) {
             SolvesScreen(
                 solveState = solveState,
-                paddingValues = paddingValues
+                paddingValues = paddingValues,
+                onSessionEvent = onSessionEvent,
+                sessionState = sessionState,
+                viewModel = viewModel
+
             )
         }
     }

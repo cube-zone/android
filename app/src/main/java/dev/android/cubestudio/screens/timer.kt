@@ -224,6 +224,7 @@ fun TimerScreen(
         if (lastSolve != null) {
             dnf = !dnf
             onSolveEvent(SolveEvent.DnfSolve(lastSolve!!, dnf))
+            lastTimePenalisation = if (dnf) 0 else lastTimePenalisation
         }
     }
     fun deleteSolve() {
@@ -275,6 +276,7 @@ fun TimerScreen(
             },
         ) {
             if (solveState.isEditingComment && lastSolve != null) {
+                lastSolve = solveState.solves[0]
                 EditCommentDialog(state = solveState, onEvent = onSolveEvent, solve = lastSolve!!)
             }
 
@@ -344,7 +346,7 @@ fun TimerScreen(
                                 modifier = Modifier.padding(5.dp, 0.dp),
                                 contentPadding = PaddingValues(start = 16.dp, end = 8.dp),
                             ) {
-                                Log.d("DEBUG", "sessions: ${sessionState.sessions}")
+                                Log.d("DEBUG", "Stype: $ sessions: ${sessionState.sessions}")
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(currentSession?.sessionName ?: "Not Selected")
                                     Icon(Icons.Default.ArrowDropDown, null)
@@ -355,17 +357,22 @@ fun TimerScreen(
                                 onDismissRequest = { selectSessionButtonExpanded = false },
                             ) {
                                 sessionState.sessions.forEach { session ->
-                                    DropdownMenuItem(
-                                        text = { Text(session.sessionName) },
-                                        onClick = {
-                                            selectSessionButtonExpanded = false
-                                            currentSession = session
-                                            viewModel.updateCurrentSessionId(session.sessionId ?: 0)
-                                            Log.d("DEBUG","sessionId: ${viewModel.state.currentSessionId} target: ${session.sessionId}")
-                                        },
-                                        contentPadding = PaddingValues(horizontal = 15.dp),
-                                        modifier = Modifier.sizeIn(maxHeight = 35.dp)
-                                    )
+                                    if (session.scrambleType == viewModel.state.currentScrambleType) {
+                                        DropdownMenuItem(
+                                            text = { Text(session.sessionName) },
+                                            onClick = {
+                                                selectSessionButtonExpanded = false
+                                                currentSession = session
+                                                viewModel.updateCurrentSessionId(session.sessionId ?: 0)
+                                                Log.d(
+                                                    "DEBUG",
+                                                    "sessionId: ${viewModel.state.currentSessionId} target: ${session.sessionId}"
+                                                )
+                                            },
+                                            contentPadding = PaddingValues(horizontal = 15.dp),
+                                            modifier = Modifier.sizeIn(maxHeight = 35.dp)
+                                        )
+                                    }
                                 }
                                 DropdownMenuItem(
                                     text = { Text("New Session") },
@@ -395,7 +402,7 @@ fun TimerScreen(
                                 if (!dnf) {
                                     Timer(time = formatTime(time = (lastTime + lastTimePenalisation).toFloat()))
                                     if (lastTimePenalisation != 0) Text(
-                                        text = "(+${lastTimePenalisation / 1000})",
+                                        text = "+${lastTimePenalisation / 1000}",
                                         modifier = Modifier.padding(5.dp),
                                         color = Color.Red
                                     )
