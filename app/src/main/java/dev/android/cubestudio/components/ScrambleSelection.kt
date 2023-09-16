@@ -1,6 +1,7 @@
 package dev.android.cubestudio.components
 
 import android.util.Log
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -43,7 +44,7 @@ fun ScrambleSelection(
     ) {
         OutlinedButton(
             onClick = { scrambleTypeButtonExpanded = true },
-            modifier = Modifier.padding(5.dp, 0.dp),
+            modifier = Modifier.animateContentSize().padding(5.dp, 0.dp),
             contentPadding = PaddingValues(start = 16.dp, end = 8.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {

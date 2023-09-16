@@ -50,7 +50,7 @@ fun AddSessionDialog(
         title = { Text(text = "Add session") },
         text = {
             OutlinedTextField(
-                value = text ?: "",
+                value = text,
                 onValueChange = {
                     text = it
                 },
