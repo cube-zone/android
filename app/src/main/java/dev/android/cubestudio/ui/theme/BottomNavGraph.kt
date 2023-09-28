@@ -53,8 +53,8 @@ fun BottomNavGraph(
                 paddingValues = paddingValues,
                 onSessionEvent = onSessionEvent,
                 sessionState = sessionState,
-                viewModel = viewModel
-
+                viewModel = viewModel,
+                onSolveEvent = onSolveEvent
             )
         }
     }

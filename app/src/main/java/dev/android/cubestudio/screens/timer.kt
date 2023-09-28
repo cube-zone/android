@@ -52,7 +52,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.example.compose.CubeStudioTheme
+import dev.android.cubestudio.ui.theme.CubeStudioTheme
 import dev.android.cubestudio.components.AddSessionDialog
 import dev.android.cubestudio.components.EditCommentDialog
 import dev.android.cubestudio.components.TimerStats
@@ -64,10 +64,7 @@ import dev.android.cubestudio.databases.solves.SolveEvent
 import dev.android.cubestudio.databases.solves.SolveState
 import dev.android.cubestudio.scrambleTypes.Scramble
 import kotlin.math.floor
-import kotlinx.coroutines.flow.collect
-import androidx.lifecycle.lifecycleScope
 import dev.android.cubestudio.MainViewModel
-import kotlinx.coroutines.launch
 
 val robotoMono = FontFamily(Font(resId = R.font.robotomonomedium))
 val poppins = FontFamily(Font(resId = R.font.poppinsmedium))

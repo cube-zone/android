@@ -39,7 +39,6 @@ fun SessionSelection(
     currentSession: Session?,
     currentScrambleType: String
 ) {
-    Log.d("DEBUG", "Current Stype: $currentScrambleType CurrentVmst: ${viewModel.state.currentScrambleType} Sessions: ${sessionState.sessions}")
     var selectedSession by remember { mutableStateOf<Session?>(null) }
     val selectedSessionId = selectedSession?.sessionId
 

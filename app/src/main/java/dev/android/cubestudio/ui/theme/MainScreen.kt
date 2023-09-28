@@ -47,6 +47,7 @@ import dev.android.cubestudio.databases.solves.SolveEvent
 import dev.android.cubestudio.databases.solves.SolveState
 
 val poppins = FontFamily(Font(resId = R.font.poppinsmedium))
+val poppinsRegular = FontFamily(Font(resId = R.font.poppinsregular))
 val poppinsSemiBold = FontFamily(Font(resId = R.font.poppinssemibold))
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -13,5 +13,6 @@ data class SolveState (
     val isSmartCube: Boolean = false,
     val sessionId: Int = 0,
     val isRandomState: Boolean = false,
-    val isEditingComment: Boolean = false
+    val isEditingComment: Boolean = false,
+    val solvePopupIsShown: Boolean = false
 )

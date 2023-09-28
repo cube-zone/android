@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.liveData
 import androidx.lifecycle.viewModelScope
+import dev.android.cubestudio.databases.solves.Solve
 import kotlinx.coroutines.launch
 
 class MainViewModel(
@@ -66,7 +67,11 @@ class MainViewModel(
             savedStateHandle["current_scramble_type"] = scrambleType
             state.currentScrambleType = scrambleType
         }
-
+    }
+    fun updateCurrentPopupSolve(solve:Solve) {
+        viewModelScope.launch {
+            state.currentPopupSolve = solve
+        }
     }
     companion object {
         private const val CURRENT_SESSION_ID_KEY = "current_session_id"

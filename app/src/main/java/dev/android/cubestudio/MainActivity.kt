@@ -2,7 +2,6 @@ package dev.android.cubestudio
 
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -19,18 +18,16 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.room.Room
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.example.compose.CubeStudioTheme
+import dev.android.cubestudio.ui.theme.CubeStudioTheme
 import dev.android.cubestudio.ui.theme.MainScreen
 import dev.android.cubestudio.ui.theme.poppins
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dev.android.cubestudio.databases.sessions.SessionDatabase
-import dev.android.cubestudio.databases.sessions.SessionState
 import dev.android.cubestudio.databases.sessions.SessionViewModel
 import dev.android.cubestudio.databases.solves.SolveDatabase
 import dev.android.cubestudio.databases.solves.SolveViewModel
 import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.viewmodel.compose.viewModel
 
 val myTypography = Typography(
     labelMedium = TextStyle(

@@ -23,4 +23,6 @@ sealed interface SolveEvent {
     data class EditComment(val solve: Solve, val text: String):SolveEvent
     object ShowEditCommentDialog: SolveEvent
     object HideEditCommentDialog: SolveEvent
+    object ShowSolvePopup: SolveEvent
+    object HideSolvePopup: SolveEvent
 }

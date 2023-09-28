@@ -102,6 +102,20 @@ class SolveViewModel(private val dao: SolveDao, mainViewModel: MainViewModel): V
                     )
                 }
             }
+            SolveEvent.HideSolvePopup -> {
+                _state.update {
+                    it.copy(
+                        solvePopupIsShown = false
+                    )
+                }
+            }
+            SolveEvent.ShowSolvePopup -> {
+                _state.update {
+                    it.copy(
+                        solvePopupIsShown = true
+                    )
+                }
+            }
             is SolveEvent.DnfSolve -> {
                 val updatedSolve = event.solve.copy(dnf = event.value)
                 viewModelScope.launch {
