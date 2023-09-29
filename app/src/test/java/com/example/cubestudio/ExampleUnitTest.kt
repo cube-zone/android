@@ -1,4 +1,4 @@
-package dev.android.cubestudio
+package dev.android.cubezone
 
 import org.junit.Test
 

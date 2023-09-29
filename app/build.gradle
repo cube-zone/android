@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace 'dev.android.cubestudio'
+    namespace 'dev.android.cubezone'
     compileSdk 34
 
     defaultConfig {
-        applicationId "dev.android.cubestudio"
+        applicationId "dev.android.cubezone"
         minSdk 29
         targetSdk 34
         versionCode 1
