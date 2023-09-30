@@ -22,17 +22,20 @@ fun SolveOptions(
     deleteSolve: () -> Unit,
     addComment: () -> Unit,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Center,
+    showAddComment: Boolean = true
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = horizontalArrangement,
         modifier = Modifier.fillMaxWidth()
     ) {
-        TextButton(onClick = addComment) {
-            Icon (
-                painter = painterResource(id = R.drawable.baseline_add_comment_24),
-                contentDescription = null,
-            )
+        if (showAddComment) {
+            TextButton(onClick = addComment) {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_add_comment_24),
+                    contentDescription = null,
+                )
+            }
         }
         TextButton(onClick = plusTwo) {
             Text(

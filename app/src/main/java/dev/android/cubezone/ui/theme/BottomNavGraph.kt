@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import dev.android.cubezone.MainActivity
 import dev.android.cubezone.MainViewModel
+import dev.android.cubezone.State
 import dev.android.cubezone.databases.sessions.SessionEvent
 import dev.android.cubezone.databases.sessions.SessionState
 import dev.android.cubezone.databases.solves.SolveEvent
@@ -26,12 +27,11 @@ fun BottomNavGraph(
     sessionState: SessionState,
     onSolveEvent: (SolveEvent) -> Unit,
     onSessionEvent: (SessionEvent) -> Unit,
-    viewModel: MainViewModel
-
+    viewModel: MainViewModel,
 ){
     NavHost(
         navController = navController,
-        startDestination = BottomBarScreen.timer.route
+        startDestination = BottomBarScreen.timer.route,
     ) {
         composable(route = BottomBarScreen.timer.route) {
            TimerScreen(
@@ -40,7 +40,7 @@ fun BottomNavGraph(
                onSolveEvent = onSolveEvent,
                onSessionEvent = onSessionEvent,
                sessionState = sessionState,
-               viewModel = viewModel
+               viewModel = viewModel,
            )
         }
         composable(route = BottomBarScreen.stats.route) {
@@ -53,7 +53,7 @@ fun BottomNavGraph(
                 onSessionEvent = onSessionEvent,
                 sessionState = sessionState,
                 viewModel = viewModel,
-                onSolveEvent = onSolveEvent
+                onSolveEvent = onSolveEvent,
             )
         }
     }

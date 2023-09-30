@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -22,12 +21,16 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import dev.android.cubezone.MainViewModel
 import dev.android.cubezone.databases.solves.Solve
 import dev.android.cubezone.databases.solves.SolveEvent
 import dev.android.cubezone.databases.solves.SolveState
@@ -37,37 +40,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 
-@Composable
-fun SolveOptionsNoComment(
-    plusTwo: () -> Unit,
-    dnf: () -> Unit,
-    deleteSolve: () -> Unit,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        TextButton(onClick = plusTwo) {
-            Text(
-                "+2",
-                fontSize = 18.sp
-            )
-        }
-        TextButton(onClick = dnf) {
-            Text(
-                "DNF",
-                fontSize = 18.sp
-            )
-        }
-        TextButton(onClick = deleteSolve) {
-            Icon(
-                imageVector = Icons.Default.Delete,
-                contentDescription = null,
-            )
-        }
-    }
-}
 private fun getDateTime(s: Long): String? {
     return try {
         val sdf = SimpleDateFormat("MM/dd/yyyy", java.util.Locale.getDefault())
@@ -81,16 +53,30 @@ private fun getDateTime(s: Long): String? {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SolvePopUp(
-    solve: Solve,
+    solveId: Int,
+    comment: String?,
     onSolveEvent: (SolveEvent) -> Unit,
-    solveState: SolveState
+    solveState: SolveState,
+    viewModel: MainViewModel
 ) {
-    Log.d("DEBUG", "SolvePopupShown")
+    var currentSolve by remember{ mutableStateOf(solveState.solves.find { it.solveId == solveId }!!) }
     val calendar: Calendar = Calendar.getInstance()
-    calendar.timeInMillis = solve.createdAt
+    calendar.timeInMillis = currentSolve.createdAt
     AlertDialog(
         onDismissRequest = { onSolveEvent(SolveEvent.HideSolvePopup) }
     ) {
+        if(solveState.isEditingComment) {
+            currentSolve = solveState.solves.find { it.solveId == solveId }!!
+            EditCommentDialog(
+                solve = currentSolve,
+                state = solveState,
+                onEvent = onSolveEvent,
+            )
+            Log.d("DEBUG", "SolvePopUp: ${solveState.solves.find { it.solveId == solveId }!!}")
+            currentSolve = solveState.solves.find { it.solveId == solveId }!!
+        }
+        Log.d("DEBUG", "SolvePopUp: ${solveState.solves.find { it.solveId == solveId }!!}")
+        currentSolve = solveState.solves.find { it.solveId == solveId }!!
         Surface(
             shape = RoundedCornerShape(20.dp),
         ) {
@@ -103,18 +89,18 @@ fun SolvePopUp(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = if (solve.dnf) "DNF" else {
+                            text = if (currentSolve.dnf) "DNF" else {
                                 formatTime(
-                                    (solve.time + (solve.penalisation ?: 0)).toFloat()
+                                    (currentSolve.time + (currentSolve.penalisation ?: 0)).toFloat()
                                 )
                             },
                             textAlign = TextAlign.Start,
                             style = MaterialTheme.typography.headlineLarge,
-                            color = if (solve.dnf) Color.Red else MaterialTheme.colorScheme.onSurface,
+                            color = if (currentSolve.dnf) Color.Red else MaterialTheme.colorScheme.onSurface,
                         )
-                        if (solve.penalisation != null && solve.penalisation != 0) {
+                        if (currentSolve.penalisation != null && currentSolve.penalisation != 0) {
                             Text(
-                                text = " +${solve.penalisation / 1000}",
+                                text = " +${currentSolve.penalisation!! / 1000}",
                                 textAlign = TextAlign.Start,
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = Color.Red,
@@ -122,7 +108,7 @@ fun SolvePopUp(
                         }
                     }
                     Text(
-                        text = getDateTime(solve.createdAt) ?: "Error",
+                        text = getDateTime(currentSolve.createdAt) ?: "Error",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -135,15 +121,15 @@ fun SolvePopUp(
                         .padding(10.dp)
                 ) {
                     Text(
-                        text = solve.scramble,
+                        text = currentSolve.scramble,
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Start,
                     )
                 }
-                Box(contentAlignment = Alignment.CenterEnd) {
-                    Column {
-                        HorizontalDivider()
-                        if (solve.comment != null && solve.comment != "") {
+                if (currentSolve.comment != null && currentSolve.comment != "") {
+                    Box(contentAlignment = Alignment.CenterEnd) {
+                        Column {
+                            HorizontalDivider()
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -152,37 +138,47 @@ fun SolvePopUp(
                                     .padding(10.dp, 10.dp, 54.dp, 10.dp)
                             ) {
                                 Text(
-                                    text = solve.comment,
+                                    text = currentSolve.comment ?: "",
                                     style = MaterialTheme.typography.bodyMedium,
                                     textAlign = TextAlign.Start,
                                     modifier = Modifier.weight(2f)
                                 )
                             }
                         }
-                        HorizontalDivider()
-                    }
-                    Box(modifier = Modifier.offset((-10).dp), contentAlignment = Alignment.Center){
-                        TextButton(
-                            onClick = { /*TODO*/ },
-                            modifier = Modifier.size(34.dp)
-                        ) {}
-                        Icon(
-                            Icons.Default.Edit,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier
-                        )
+                        Box(
+                            modifier = Modifier.offset((-10).dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            TextButton(
+                                onClick = { onSolveEvent(SolveEvent.ShowEditCommentDialog) },
+                                modifier = Modifier.size(34.dp)
+                            ) {}
+                            Icon(
+                                Icons.Default.Edit,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                            )
+                        }
                     }
                 }
+                HorizontalDivider()
                 SolveOptions(
-                    plusTwo = { onSolveEvent(SolveEvent.PenaliseSolve(solve, 2000)) },
-                    dnf = { onSolveEvent(SolveEvent.DnfSolve(solve, !solve.dnf )) },
+                    plusTwo = {
+                        onSolveEvent(SolveEvent.PenaliseSolve(currentSolve, (currentSolve.penalisation ?: 0) + 2000, false))
+                        onSolveEvent(SolveEvent.HideSolvePopup)
+                    },
+                    dnf = {
+                        onSolveEvent(SolveEvent.PenaliseSolve(currentSolve, 0, !currentSolve.dnf))
+                        onSolveEvent(SolveEvent.HideSolvePopup)
+                    },
                     deleteSolve = {
-                        onSolveEvent(SolveEvent.DeleteSolve(solve)) 
+                        onSolveEvent(SolveEvent.DeleteSolve(currentSolve))
                         onSolveEvent(SolveEvent.HideSolvePopup)
                     },
                     addComment = { onSolveEvent(SolveEvent.ShowEditCommentDialog) },
                     horizontalArrangement = Arrangement.SpaceEvenly,
+                    showAddComment = (currentSolve.comment == null || currentSolve.comment == ""),
                 )
             }
         }

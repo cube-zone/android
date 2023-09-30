@@ -29,11 +29,12 @@ fun EditCommentDialog(
     solve: Solve,
     modifier: Modifier = Modifier
 ) {
-    var text by remember { mutableStateOf("") }
+    var text by remember { mutableStateOf(solve.comment) }
     AlertDialog(
         modifier = modifier,
         onDismissRequest = {
             onEvent(SolveEvent.HideEditCommentDialog)
+            onEvent(SolveEvent.HideSolvePopup)
         },
         title = { Text(text = "Edit comment") },
         text = {
@@ -54,7 +55,7 @@ fun EditCommentDialog(
             ) {
                 Button(
                     onClick = {
-                        onEvent(SolveEvent.EditComment(solve, text))
+                        onEvent(SolveEvent.EditComment(solve, text?: ""))
                         onEvent(SolveEvent.HideEditCommentDialog)},
                     colors = ButtonDefaults.buttonColors(
                         containerColor = colorResource(id = R.color.primary),

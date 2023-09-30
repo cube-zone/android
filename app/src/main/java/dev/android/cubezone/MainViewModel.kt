@@ -7,14 +7,12 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import dev.android.cubezone.databases.solves.Solve
 import kotlinx.coroutines.launch
-
 class MainViewModel(
     private val userPreferencesRepository: UserPreferencesRepository,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
-    val state: State = State()
     private val userPreferencesFlow = userPreferencesRepository.userPreferencesFlow
-
+    val state: State = State()
     init {
         // Check if the currentSessionId is already stored in savedStateHandle
         if (savedStateHandle.contains(CURRENT_SESSION_ID_KEY)) {

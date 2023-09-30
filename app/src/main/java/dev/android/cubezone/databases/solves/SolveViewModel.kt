@@ -127,7 +127,7 @@ class SolveViewModel(private val dao: SolveDao, mainViewModel: MainViewModel): V
                 }
             }
             is SolveEvent.PenaliseSolve -> {
-                val updatedSolve = event.solve.copy(penalisation = event.value)
+                val updatedSolve = event.solve.copy(penalisation = event.penalisation, dnf = event.dnf)
                 viewModelScope.launch {
                     dao.upsertSolve(updatedSolve)
                 }

@@ -190,7 +190,7 @@ fun TimerScreen(
 ) {
     val timerObject by remember { mutableStateOf(TimerObject())}
     var time by remember { mutableStateOf(0L) }
-    var lastTime by remember { mutableStateOf(0L)}
+    Log.d("DEBUG", "is empty: ${solveState.solves.isNotEmpty()}")
     var currentlyTiming by remember { mutableStateOf(false) }
     val currentScramble by remember {mutableStateOf( Current(Type = "3x3") )}
     var scramble by remember{ mutableStateOf(Scramble(currentScramble.Type)) }
@@ -206,12 +206,15 @@ fun TimerScreen(
     val windowInsets = remember(view) { ViewCompat.getRootWindowInsets(view) }
     val insetTypes = WindowInsetsCompat.Type.systemBars()
     val insets = windowInsets?.getInsets(insetTypes)
+
+    var lastTime by remember { mutableStateOf(if(solveState.solves.isNotEmpty()) solveState.solves[0].time else 0L)}
     currentSession = sessionState.sessions.find { it.sessionId == viewModel.state.currentSessionId }
     currentScramble.Type = viewModel.state.currentScrambleType
 
 
     fun plusTwo() {
         lastSolve = solveState.solves[0]
+        lastTime = solveState.solves[0].time
         if (lastSolve != null) {
             lastTimePenalisation += 2000
             onSolveEvent(SolveEvent.PenaliseSolve(lastSolve!!, lastTimePenalisation))
@@ -219,14 +222,16 @@ fun TimerScreen(
     }
     fun dnf() {
         lastSolve = solveState.solves[0]
+        lastTime = solveState.solves[0].time
         if (lastSolve != null) {
             dnf = !dnf
-            onSolveEvent(SolveEvent.DnfSolve(lastSolve!!, dnf))
             lastTimePenalisation = if (dnf) 0 else lastTimePenalisation
+            onSolveEvent(SolveEvent.PenaliseSolve(lastSolve!!, lastTimePenalisation, dnf))
         }
     }
     fun deleteSolve() {
         lastSolve = solveState.solves[0]
+        lastTime = solveState.solves[0].time
         if (lastSolve != null && !lastSolveIsDeleted) {
             onSolveEvent(SolveEvent.DeleteSolve(lastSolve!!))
             lastSolve = null
@@ -268,7 +273,6 @@ fun TimerScreen(
                     scramble = Scramble(currentScramble.Type)
                     onSolveEvent(SolveEvent.SaveSolve)
                     lastSolve = solveState.solves[0]
-                    for (i in (0..3)) println(solveState.solves[i])
                 }
                 currentlyTiming = !currentlyTiming
             },

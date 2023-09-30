@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import dev.android.cubezone.MainActivity
 import dev.android.cubezone.MainViewModel
+import dev.android.cubezone.State
 import dev.android.cubezone.databases.sessions.SessionEvent
 import dev.android.cubezone.databases.sessions.SessionState
 import dev.android.cubezone.databases.solves.SolveEvent
@@ -67,7 +68,7 @@ fun MainScreen(
                 onSolveEvent = onSolveEvent,
                 sessionState = sessionState,
                 onSessionEvent = onSessionEvent,
-                viewModel = mainViewModel
+                viewModel = mainViewModel,
             )
         }
     )

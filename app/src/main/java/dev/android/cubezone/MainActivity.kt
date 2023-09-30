@@ -122,7 +122,7 @@ class MainActivity : ComponentActivity() {
                     sessionState = sessionState,
                     onSolveEvent = solveViewModel::onSolveEvent,
                     onSessionEvent = sessionViewModel::onSessionEvent,
-                    mainViewModel = mainViewModel
+                    mainViewModel = mainViewModel,
                 )
             }
         }

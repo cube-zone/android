@@ -53,6 +53,7 @@ import androidx.compose.ui.zIndex
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import dev.android.cubezone.MainViewModel
+import dev.android.cubezone.State
 import dev.android.cubezone.components.ScrambleSelection
 import dev.android.cubezone.components.SessionSelection
 import dev.android.cubezone.components.SolvePopUp
@@ -109,13 +110,14 @@ fun SolvesScreen(
         )
     ) {
         if (solveState.solvePopupIsShown && popupSolve != null) {
-            Log.d("DEBUG", "${solveState.solvePopupIsShown}")
+            Log.d("DEBUG", "${popupSolve!!.dnf}")
             SolvePopUp(
-                solve = popupSolve!!,
+                solveId = popupSolve!!.solveId?:0,
                 onSolveEvent = onSolveEvent,
-                solveState = solveState
+                solveState = solveState,
+                comment = popupSolve!!.comment,
+                viewModel = viewModel
             )
-            Log.d("DEBUG", "$popupSolve")
         }
         Column {
             Row(modifier = Modifier.padding(5.dp, 0.dp)) {
@@ -264,9 +266,9 @@ fun SolvesScreen(
                     if (query == "" || solve.comment?.contains(query, ignoreCase = true) == true) {
                         item {
                             Box(modifier = Modifier.clickable {
-                                onSolveEvent(SolveEvent.ShowSolvePopup)
                                 popupSolve = solve
                                 viewModel.updateCurrentPopupSolve(solve)
+                                onSolveEvent(SolveEvent.ShowSolvePopup)
                                 Log.d("DEBUG", "$solve")
                             }) {
                                 if (solveState.solves.indexOf(solve) % 2 != 0) {

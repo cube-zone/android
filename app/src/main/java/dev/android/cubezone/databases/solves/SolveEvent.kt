@@ -15,7 +15,7 @@ sealed interface SolveEvent {
         val isRandomState: Boolean = false,
         val id: Int? = null
     ): SolveEvent
-    data class PenaliseSolve(val solve: Solve, val value: Int): SolveEvent
+    data class PenaliseSolve(val solve: Solve, val penalisation: Int = 0, val dnf:Boolean = false): SolveEvent
     data class DnfSolve(val solve: Solve, val value: Boolean): SolveEvent
     data class DeleteSolve(val solve: Solve): SolveEvent
     data class EditComment(val solve: Solve, val text: String):SolveEvent
