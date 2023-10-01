@@ -124,7 +124,7 @@ fun SolvesScreen(
                 ScrambleSelection(viewModel = viewModel, currentScramble = currentScrambleType)
                 SessionSelection(
                     viewModel = viewModel,
-                    currentScrambleType = viewModel.state.currentScrambleType,
+                    currentScrambleType = viewModel.state.currentScrambleType?: "3x3",
                     currentSession = sessionState.sessions.find { it.sessionId == viewModel.state.currentSessionId },
                     onSessionEvent = onSessionEvent,
                     sessionState = sessionState

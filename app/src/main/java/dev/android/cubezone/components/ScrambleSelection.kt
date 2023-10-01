@@ -42,7 +42,7 @@ fun ScrambleSelection(
             contentPadding = PaddingValues(start = 16.dp, end = 8.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(currentScramble.Type)
+                Text(currentScramble.type ?: "3x3")
                 Icon(Icons.Default.ArrowDropDown, null)
             }
         }
@@ -55,7 +55,7 @@ fun ScrambleSelection(
                     text = { Text(scrambleType) },
                     onClick = {
                         scrambleTypeButtonExpanded = false
-                        currentScramble.Type = scrambleType
+                        currentScramble.type = scrambleType
                         viewModel.updateCurrentScrambleType(scrambleType)
                     },
                     contentPadding = PaddingValues(horizontal = 15.dp),

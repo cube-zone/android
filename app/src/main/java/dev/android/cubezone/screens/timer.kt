@@ -2,6 +2,8 @@ package dev.android.cubezone.screens
 
 import android.util.Log
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,6 +47,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
@@ -85,7 +88,7 @@ val scrambleNames = arrayOf(
     "Clock"
 )
 data class Current(
-    var Type: String
+    var type: String?
 )
 
 class TimerObject() {
@@ -190,10 +193,9 @@ fun TimerScreen(
 ) {
     val timerObject by remember { mutableStateOf(TimerObject())}
     var time by remember { mutableStateOf(0L) }
-    Log.d("DEBUG", "is empty: ${solveState.solves.isNotEmpty()}")
     var currentlyTiming by remember { mutableStateOf(false) }
-    val currentScramble by remember {mutableStateOf( Current(Type = "3x3") )}
-    var scramble by remember{ mutableStateOf(Scramble(currentScramble.Type)) }
+    val currentScramble by remember {mutableStateOf( Current(type = viewModel.state.currentScrambleType) )}
+    var scramble by remember{ mutableStateOf(viewModel.state.currentScramble) }
 
     var lastTimePenalisation by remember { mutableStateOf(0) }
     var dnf by remember { mutableStateOf(false) }
@@ -209,13 +211,17 @@ fun TimerScreen(
 
     var lastTime by remember { mutableStateOf(if(solveState.solves.isNotEmpty()) solveState.solves[0].time else 0L)}
     currentSession = sessionState.sessions.find { it.sessionId == viewModel.state.currentSessionId }
-    currentScramble.Type = viewModel.state.currentScrambleType
+    if(currentScramble.type == null) currentScramble.type = viewModel.state.currentScrambleType
 
+    if (currentScramble.type != null && scramble == ""){
+        scramble = Scramble(currentScramble.type!!)
+        viewModel.updateCurrentScramble(scramble)
+    }
 
     fun plusTwo() {
         lastSolve = solveState.solves[0]
         lastTime = solveState.solves[0].time
-        if (lastSolve != null) {
+        if (lastSolve != null && !dnf) {
             lastTimePenalisation += 2000
             onSolveEvent(SolveEvent.PenaliseSolve(lastSolve!!, lastTimePenalisation))
         }
@@ -255,24 +261,29 @@ fun TimerScreen(
     }
     CubeStudioTheme() {
         Surface(
+            modifier = if(!currentlyTiming) Modifier.clickable {
+                timerObject.startTimer()
+                lastTimePenalisation = 0
+                dnf = false
+                lastSolveIsDeleted = false
+            } else Modifier.pointerInput(Unit) { detectTapGestures {
+                lastTime = time
+                onSolveEvent(SolveEvent.SetSolve(
+                    createdAt = System.currentTimeMillis(),
+                    scramble = scramble,
+                    sessionId = currentSession?.sessionId ?: 0,
+                    time = lastTime,
+                    id = (solveState.solves[0].solveId!! + 1)
+                ))
+                scramble = Scramble(currentScramble.type?: "3x3")
+                viewModel.updateCurrentScramble(scramble)
+                onSolveEvent(SolveEvent.SaveSolve)
+                lastSolve = solveState.solves[0]
+            } }.fillMaxSize(),
             onClick = {
                 if (!currentlyTiming) {
-                    timerObject.startTimer()
-                    lastTimePenalisation = 0
-                    dnf = false
-                    lastSolveIsDeleted = false
                 } else {
-                    lastTime = time
-                    onSolveEvent(SolveEvent.SetSolve(
-                        createdAt = System.currentTimeMillis(),
-                        scramble = scramble,
-                        sessionId = currentSession?.sessionId ?: 0,
-                        time = lastTime,
-                        id = (solveState.solves[0].solveId!! + 1)
-                    ))
-                    scramble = Scramble(currentScramble.Type)
-                    onSolveEvent(SolveEvent.SaveSolve)
-                    lastSolve = solveState.solves[0]
+
                 }
                 currentlyTiming = !currentlyTiming
             },
@@ -283,7 +294,7 @@ fun TimerScreen(
             }
 
             if (sessionState.isAddingSession) {
-                AddSessionDialog(state = sessionState, onEvent = onSessionEvent, scrambleType = currentScramble.Type)
+                AddSessionDialog(state = sessionState, onEvent = onSessionEvent, scrambleType = currentScramble.type?: "3x3")
             }
 
             Column(
@@ -315,7 +326,10 @@ fun TimerScreen(
                                 contentPadding = PaddingValues(start = 16.dp, end = 8.dp),
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(currentScramble.Type)
+                                    if (currentSession?.scrambleType != currentScramble.type) {
+                                        currentSession = sessionState.sessions.find { it.scrambleType == currentScramble.type}
+                                    }
+                                    Text(currentScramble.type?: "3x3")
                                     Icon(Icons.Default.ArrowDropDown, null)
                                 }
                             }
@@ -328,9 +342,25 @@ fun TimerScreen(
                                         text = { Text(scrambleType) },
                                         onClick = {
                                             scrambleTypeButtonExpanded = false
-                                            currentScramble.Type = scrambleType
+                                            currentScramble.type = scrambleType
                                             viewModel.updateCurrentScrambleType(scrambleType)
                                             scramble = Scramble(scrambleType)
+                                            viewModel.updateCurrentScramble(scramble)
+
+                                            if (sessionState.sessions.find { it.scrambleType == scrambleType } != null) {
+                                                currentSession = sessionState.sessions.find { it.scrambleType == scrambleType }
+                                                Log.d("DEBUG", "not null currentSession: ${currentSession?.sessionName}")
+                                            } else {
+                                                onSessionEvent(SessionEvent.SetSession(
+                                                    sessionName = "default",
+                                                    scrambleType = scrambleType,
+                                                    createdAt = System.currentTimeMillis(),
+                                                    lastUsedAt = System.currentTimeMillis().toInt()
+                                                ))
+                                                onSessionEvent(SessionEvent.SaveSession)
+                                                currentSession = sessionState.sessions.find { it.scrambleType == scrambleType }
+                                                Log.d("DEBUG", "currentSession: ${currentSession?.sessionName}")
+                                            }
                                         },
                                         contentPadding = PaddingValues(horizontal = 15.dp),
                                         modifier = Modifier.sizeIn(maxHeight = 35.dp)
@@ -365,10 +395,7 @@ fun TimerScreen(
                                                 selectSessionButtonExpanded = false
                                                 currentSession = session
                                                 viewModel.updateCurrentSessionId(session.sessionId ?: 0)
-                                                Log.d(
-                                                    "DEBUG",
-                                                    "sessionId: ${viewModel.state.currentSessionId} target: ${session.sessionId}"
-                                                )
+                                                Log.d("DEBUG", "sessionId: ${viewModel.state.currentSessionId} target: ${session.sessionId}")
                                             },
                                             contentPadding = PaddingValues(horizontal = 15.dp),
                                             modifier = Modifier.sizeIn(maxHeight = 35.dp)
@@ -376,8 +403,8 @@ fun TimerScreen(
                                     }
                                 }
                                 DropdownMenuItem(
-                                    text = { Text("New Session") },
-                                    trailingIcon = {Icon(Icons.Default.Add, null)},
+                                    text = { Text("New", color = MaterialTheme.colorScheme.primary) },
+                                    leadingIcon = {Icon(Icons.Default.Add, null, tint = MaterialTheme.colorScheme.primary)},
                                     onClick = {
                                         onSessionEvent(SessionEvent.ShowAddSessionDialog)
                                         selectSessionButtonExpanded = false

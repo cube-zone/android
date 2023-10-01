@@ -64,6 +64,11 @@ class MainViewModel(
             state.currentScrambleType = scrambleType
         }
     }
+    fun updateCurrentScramble(scramble: String) {
+        viewModelScope.launch {
+            state.currentScramble = scramble
+        }
+    }
     fun updateCurrentPopupSolve(solve:Solve) {
         viewModelScope.launch {
             state.currentPopupSolve = solve
