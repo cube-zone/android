@@ -11,10 +11,12 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -22,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Surface
@@ -53,6 +56,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.window.Dialog
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import dev.android.cubezone.ui.theme.CubeStudioTheme
@@ -147,8 +151,38 @@ fun LastTimeOptions(
     plusTwo: () -> Unit,
     dnf: () -> Unit,
     deleteSolve: () -> Unit,
-    addComment: () -> Unit
+    addComment: () -> Unit,
+    lastSolve: Solve? = null,
 ) {
+    var showConfirmDeleteDialog by remember { mutableStateOf(false) }
+    if (showConfirmDeleteDialog && lastSolve != null) {
+        Dialog(onDismissRequest = {showConfirmDeleteDialog = false}) {
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+            ) {
+                Column(
+                    Modifier.padding(10.dp).width(250.dp)
+                ) {
+                    Text(text = "Delete solve?", modifier = Modifier.padding(10.dp))
+                    Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+                        TextButton(
+                            onClick = { showConfirmDeleteDialog = false },
+                        ) {
+                            Text(text = "Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        TextButton(
+                            onClick = {
+                                showConfirmDeleteDialog = false
+                                deleteSolve()
+                            },
+                        ) {
+                            Text(text = "Delete")
+                        }
+                    }
+                }
+            }
+        }
+    }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
@@ -171,7 +205,9 @@ fun LastTimeOptions(
                 fontSize = 18.sp
             )
         }
-        TextButton(onClick = deleteSolve) {
+        TextButton(onClick = {
+            showConfirmDeleteDialog = true
+        }) {
             Icon(
                 imageVector = Icons.Default.Delete,
                 contentDescription = null,
@@ -245,6 +281,7 @@ fun TimerScreen(
             lastTimePenalisation = 0
             lastSolveIsDeleted = true
         }
+        if (solveState.solves.isNotEmpty()) { lastSolve = solveState.solves[0] }
     }
     fun addComment() {
         if (lastSolve != null) {
@@ -262,11 +299,15 @@ fun TimerScreen(
     CubeStudioTheme() {
         Surface(
             modifier = if(!currentlyTiming) Modifier.clickable {
+                Log.d("DEBUG", "clickable")
                 timerObject.startTimer()
+                currentlyTiming = true
                 lastTimePenalisation = 0
                 dnf = false
                 lastSolveIsDeleted = false
-            } else Modifier.pointerInput(Unit) { detectTapGestures {
+            } else Modifier.pointerInput(Unit) { detectTapGestures(onPress = {
+                Log.d("DEBUG", "detectTapGestures")
+                currentlyTiming = false
                 lastTime = time
                 onSolveEvent(SolveEvent.SetSolve(
                     createdAt = System.currentTimeMillis(),
@@ -279,14 +320,7 @@ fun TimerScreen(
                 viewModel.updateCurrentScramble(scramble)
                 onSolveEvent(SolveEvent.SaveSolve)
                 lastSolve = solveState.solves[0]
-            } }.fillMaxSize(),
-            onClick = {
-                if (!currentlyTiming) {
-                } else {
-
-                }
-                currentlyTiming = !currentlyTiming
-            },
+            })},
         ) {
             if (solveState.isEditingComment && lastSolve != null) {
                 lastSolve = solveState.solves[0]
@@ -322,7 +356,9 @@ fun TimerScreen(
                         ) {
                             OutlinedButton(
                                 onClick = { scrambleTypeButtonExpanded = true },
-                                modifier = Modifier.animateContentSize().padding(5.dp, 0.dp),
+                                modifier = Modifier
+                                    .animateContentSize()
+                                    .padding(5.dp, 0.dp),
                                 contentPadding = PaddingValues(start = 16.dp, end = 8.dp),
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -375,7 +411,9 @@ fun TimerScreen(
                         ) {
                             OutlinedButton(
                                 onClick = { selectSessionButtonExpanded = true },
-                                modifier = Modifier.animateContentSize().padding(5.dp, 0.dp),
+                                modifier = Modifier
+                                    .animateContentSize()
+                                    .padding(5.dp, 0.dp),
                                 contentPadding = PaddingValues(start = 16.dp, end = 8.dp),
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -446,7 +484,8 @@ fun TimerScreen(
                                 plusTwo = { plusTwo() },
                                 dnf = { dnf() },
                                 deleteSolve = { deleteSolve() },
-                                addComment = { addComment() }
+                                addComment = { addComment() },
+                                lastSolve = lastSolve
                             )
                         }
                     }
