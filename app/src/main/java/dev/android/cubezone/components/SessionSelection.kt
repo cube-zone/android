@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.android.cubezone.MainViewModel
+import dev.android.cubezone.State
 import dev.android.cubezone.databases.sessions.Session
 import dev.android.cubezone.databases.sessions.SessionEvent
 import dev.android.cubezone.databases.sessions.SessionState
@@ -36,7 +37,8 @@ fun SessionSelection(
     viewModel: MainViewModel,
     onSessionEvent: (SessionEvent) -> Unit,
     currentSession: Session?,
-    currentScrambleType: String
+    currentScrambleType: String,
+    mainState: State,
 ) {
     var selectedSession by remember { mutableStateOf<Session?>(null) }
     val selectedSessionId = selectedSession?.sessionId
@@ -68,17 +70,13 @@ fun SessionSelection(
             onDismissRequest = { selectSessionButtonExpanded = false },
         ) {
             sessionState.sessions.forEach { session ->
-                if (session.scrambleType == viewModel.state.currentScrambleType) {
+                if (session.scrambleType == mainState.currentScrambleType) {
                     DropdownMenuItem(
                         text = { Text(session.sessionName) },
                         onClick = {
                             selectedSession = session
                             selectSessionButtonExpanded = false
                             viewModel.updateCurrentSessionId(session.sessionId ?: 0)
-                            Log.d(
-                                "DEBUG",
-                                "sessionId: ${viewModel.state.currentSessionId} target: ${session.sessionId}"
-                            )
                         },
                         contentPadding = PaddingValues(horizontal = 15.dp),
                         modifier = Modifier.sizeIn(maxHeight = 35.dp)

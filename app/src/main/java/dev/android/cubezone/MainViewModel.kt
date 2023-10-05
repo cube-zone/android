@@ -6,42 +6,39 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import dev.android.cubezone.databases.solves.Solve
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 class MainViewModel(
     private val userPreferencesRepository: UserPreferencesRepository,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     private val userPreferencesFlow = userPreferencesRepository.userPreferencesFlow
-    val state: State = State()
+    val state = MutableStateFlow(State()).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
     init {
-        // Check if the currentSessionId is already stored in savedStateHandle
         if (savedStateHandle.contains(CURRENT_SESSION_ID_KEY)) {
-            state.currentSessionId = savedStateHandle.get(CURRENT_SESSION_ID_KEY) ?: 0
+            state.value.currentSessionId = savedStateHandle.get(CURRENT_SESSION_ID_KEY) ?: 0
         } else {
-            // Initialize with the value from userPreferencesRepository
             viewModelScope.launch {
                 val initialSessionId = userPreferencesRepository.fetchInitialPreferences().currentSessionId
                 savedStateHandle.set(CURRENT_SESSION_ID_KEY, initialSessionId)
-                state.currentSessionId = initialSessionId
+                state.value.currentSessionId = initialSessionId
             }
         }
         if (savedStateHandle.contains(CURRENT_SCRAMBLE_TYPE_KEY)) {
-            state.currentScrambleType = savedStateHandle.get(CURRENT_SCRAMBLE_TYPE_KEY) ?: "3x3"
+            state.value.currentScrambleType = savedStateHandle.get(CURRENT_SCRAMBLE_TYPE_KEY) ?: "3x3"
         } else {
-            // Initialize with the value from userPreferencesRepository
             viewModelScope.launch {
                 val initialScrambleType = userPreferencesRepository.fetchInitialPreferences().currentScrambleType
                 savedStateHandle.set(CURRENT_SCRAMBLE_TYPE_KEY, initialScrambleType)
-                state.currentScrambleType = initialScrambleType
+                state.value.currentScrambleType = initialScrambleType
             }
         }
-
-        // Observe changes in userPreferencesFlow and update state accordingly
         viewModelScope.launch {
             userPreferencesFlow.collect { userPreferences ->
-                // Update your ViewModel's state here
-                state.currentScrambleType = userPreferences.currentScrambleType
-                state.currentSessionId = userPreferences.currentSessionId
+                state.value.currentScrambleType = userPreferences.currentScrambleType
+                state.value.currentSessionId = userPreferences.currentSessionId
             }
         }
     }
@@ -49,11 +46,9 @@ class MainViewModel(
     fun updateCurrentSessionId(id: Int) {
         viewModelScope.launch {
             userPreferencesRepository.updateCurrentSessionId(id)
-            // Update savedStateHandle
             savedStateHandle["current_session_id"] = id
-            // Update your ViewModel's state here
-            state.currentSessionId = id
-            Log.d("DEBUG","updateCurrentSessionId ${state.currentSessionId}")
+            state.value.currentSessionId = id
+            Log.d("DEBUG", "vm: ${state.value.currentSessionId}")
         }
     }
 
@@ -61,17 +56,17 @@ class MainViewModel(
         viewModelScope.launch {
             userPreferencesRepository.updateCurrentScrambleType(scrambleType)
             savedStateHandle["current_scramble_type"] = scrambleType
-            state.currentScrambleType = scrambleType
+            state.value.currentScrambleType = scrambleType
         }
     }
     fun updateCurrentScramble(scramble: String) {
         viewModelScope.launch {
-            state.currentScramble = scramble
+            state.value.currentScramble = scramble
         }
     }
     fun updateCurrentPopupSolve(solve:Solve) {
         viewModelScope.launch {
-            state.currentPopupSolve = solve
+            state.value.currentPopupSolve = solve
         }
     }
     companion object {

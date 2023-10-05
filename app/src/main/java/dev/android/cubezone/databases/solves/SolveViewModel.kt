@@ -3,6 +3,7 @@ package dev.android.cubezone.databases.solves
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.android.cubezone.MainViewModel
+import dev.android.cubezone.State
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -11,8 +12,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class SolveViewModel(private val dao: SolveDao, mainViewModel: MainViewModel): ViewModel() {
-    private val _solvesFromSession = dao.getSolvesFromSession(sessionId = mainViewModel.state.currentSessionId)
+class SolveViewModel(private val dao: SolveDao, mainState:State): ViewModel() {
+    private val _solvesFromSession = dao.getSolvesFromSession(sessionId = mainState.currentSessionId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
     private val _solves = dao.getAllSolves()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())

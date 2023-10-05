@@ -72,6 +72,8 @@ import dev.android.cubezone.databases.solves.SolveState
 import dev.android.cubezone.scrambleTypes.Scramble
 import kotlin.math.floor
 import dev.android.cubezone.MainViewModel
+import dev.android.cubezone.State
+import dev.android.cubezone.components.SolveOptions
 
 val robotoMono = FontFamily(Font(resId = R.font.robotomonomedium))
 val poppins = FontFamily(Font(resId = R.font.poppinsmedium))
@@ -146,75 +148,6 @@ fun Scramble(scramble: String, modifier: Modifier = Modifier) {
         )
     }
 }
-@Composable
-fun LastTimeOptions(
-    plusTwo: () -> Unit,
-    dnf: () -> Unit,
-    deleteSolve: () -> Unit,
-    addComment: () -> Unit,
-    lastSolve: Solve? = null,
-) {
-    var showConfirmDeleteDialog by remember { mutableStateOf(false) }
-    if (showConfirmDeleteDialog && lastSolve != null) {
-        Dialog(onDismissRequest = {showConfirmDeleteDialog = false}) {
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-            ) {
-                Column(
-                    Modifier.padding(10.dp).width(250.dp)
-                ) {
-                    Text(text = "Delete solve?", modifier = Modifier.padding(10.dp))
-                    Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
-                        TextButton(
-                            onClick = { showConfirmDeleteDialog = false },
-                        ) {
-                            Text(text = "Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        TextButton(
-                            onClick = {
-                                showConfirmDeleteDialog = false
-                                deleteSolve()
-                            },
-                        ) {
-                            Text(text = "Delete")
-                        }
-                    }
-                }
-            }
-        }
-    }
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
-    ) {
-        TextButton(onClick = addComment) {
-            Icon (
-                painter = painterResource(id = R.drawable.baseline_add_comment_24),
-                contentDescription = null,
-            )
-        }
-        TextButton(onClick = plusTwo) {
-            Text(
-                "+2",
-                fontSize = 18.sp
-            )
-        }
-        TextButton(onClick = dnf) {
-            Text(
-                "DNF",
-                fontSize = 18.sp
-            )
-        }
-        TextButton(onClick = {
-            showConfirmDeleteDialog = true
-        }) {
-            Icon(
-                imageVector = Icons.Default.Delete,
-                contentDescription = null,
-            )
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -225,13 +158,14 @@ fun TimerScreen(
     solveState: SolveState,
     sessionState: SessionState,
     onSolveEvent: (SolveEvent) -> Unit,
-    onSessionEvent: (SessionEvent) -> Unit
+    onSessionEvent: (SessionEvent) -> Unit,
+    mainState: State,
 ) {
     val timerObject by remember { mutableStateOf(TimerObject())}
     var time by remember { mutableStateOf(0L) }
     var currentlyTiming by remember { mutableStateOf(false) }
-    val currentScramble by remember {mutableStateOf( Current(type = viewModel.state.currentScrambleType) )}
-    var scramble by remember{ mutableStateOf(viewModel.state.currentScramble) }
+    val currentScramble by remember {mutableStateOf( Current(type = mainState.currentScrambleType) )}
+    var scramble by remember{ mutableStateOf(mainState.currentScramble) }
 
     var lastTimePenalisation by remember { mutableStateOf(0) }
     var dnf by remember { mutableStateOf(false) }
@@ -246,8 +180,8 @@ fun TimerScreen(
     val insets = windowInsets?.getInsets(insetTypes)
 
     var lastTime by remember { mutableStateOf(if(solveState.solves.isNotEmpty()) solveState.solves[0].time else 0L)}
-    currentSession = sessionState.sessions.find { it.sessionId == viewModel.state.currentSessionId }
-    if(currentScramble.type == null) currentScramble.type = viewModel.state.currentScrambleType
+    currentSession = sessionState.sessions.find { it.sessionId == mainState.currentSessionId }
+    if(currentScramble.type == null) currentScramble.type = mainState.currentScrambleType
 
     if (currentScramble.type != null && scramble == ""){
         scramble = Scramble(currentScramble.type!!)
@@ -426,14 +360,14 @@ fun TimerScreen(
                                 onDismissRequest = { selectSessionButtonExpanded = false },
                             ) {
                                 sessionState.sessions.forEach { session ->
-                                    if (session.scrambleType == viewModel.state.currentScrambleType) {
+                                    if (session.scrambleType == mainState.currentScrambleType) {
                                         DropdownMenuItem(
                                             text = { Text(session.sessionName) },
                                             onClick = {
                                                 selectSessionButtonExpanded = false
                                                 currentSession = session
                                                 viewModel.updateCurrentSessionId(session.sessionId ?: 0)
-                                                Log.d("DEBUG", "sessionId: ${viewModel.state.currentSessionId} target: ${session.sessionId}")
+                                                Log.d("DEBUG", "sessionId: ${mainState.currentSessionId} target: ${session.sessionId}")
                                             },
                                             contentPadding = PaddingValues(horizontal = 15.dp),
                                             modifier = Modifier.sizeIn(maxHeight = 35.dp)
@@ -480,12 +414,12 @@ fun TimerScreen(
                             Timer(time = formatTime(time = time.toFloat()))
                         }
                         if (!currentlyTiming) {
-                            LastTimeOptions(
+                            SolveOptions(
                                 plusTwo = { plusTwo() },
                                 dnf = { dnf() },
                                 deleteSolve = { deleteSolve() },
                                 addComment = { addComment() },
-                                lastSolve = lastSolve
+                                lastSolve = lastSolve,
                             )
                         }
                     }

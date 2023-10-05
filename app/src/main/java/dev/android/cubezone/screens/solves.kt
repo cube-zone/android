@@ -93,8 +93,9 @@ fun SolvesScreen(
     viewModel: MainViewModel,
     onSessionEvent: (SessionEvent) -> Unit,
     onSolveEvent: (SolveEvent) -> Unit,
+    mainState: State,
 ) {
-    var currentScrambleType: Current by remember { mutableStateOf(Current(viewModel.state.currentScrambleType)) }
+    var currentScrambleType: Current by remember { mutableStateOf(Current(mainState.currentScrambleType)) }
     var currentSession: Session? by remember { mutableStateOf(null) }
     var query: String by remember { mutableStateOf("") }
     var searchBarActive: Boolean by remember { mutableStateOf(false) }
@@ -102,7 +103,7 @@ fun SolvesScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
     val keyboardIsOpen = WindowInsets.isImeVisible
     var popupSolve: Solve? by remember{ mutableStateOf(null) }
-    currentSession = sessionState.sessions.find { it.sessionId == viewModel.state.currentSessionId }
+    currentSession = sessionState.sessions.find { it.sessionId == mainState.currentSessionId }
     Column(
         modifier = Modifier.padding(
             top = paddingValues.calculateTopPadding(),
@@ -124,10 +125,11 @@ fun SolvesScreen(
                 ScrambleSelection(viewModel = viewModel, currentScramble = currentScrambleType)
                 SessionSelection(
                     viewModel = viewModel,
-                    currentScrambleType = viewModel.state.currentScrambleType?: "3x3",
-                    currentSession = sessionState.sessions.find { it.sessionId == viewModel.state.currentSessionId },
+                    currentScrambleType = mainState.currentScrambleType?: "3x3",
+                    currentSession = sessionState.sessions.find { it.sessionId == mainState.currentSessionId },
                     onSessionEvent = onSessionEvent,
-                    sessionState = sessionState
+                    sessionState = sessionState,
+                    mainState = mainState,
                 )
             }
             Box(
@@ -263,7 +265,7 @@ fun SolvesScreen(
                 modifier = Modifier
             ) {
                 solveState.solves.forEach() { solve ->
-                    if (query == "" || solve.comment?.contains(query, ignoreCase = true) == true) {
+                    if ((query == "" || solve.comment?.contains(query, ignoreCase = true) == true) && solve.sessionId == (currentSession?.sessionId ?: 0)) {
                         item {
                             Box(modifier = Modifier.clickable {
                                 popupSolve = solve

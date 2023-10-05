@@ -46,14 +46,14 @@ val poppins = FontFamily(Font(resId = R.font.poppinsmedium))
 val poppinsRegular = FontFamily(Font(resId = R.font.poppinsregular))
 val poppinsSemiBold = FontFamily(Font(resId = R.font.poppinssemibold))
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     solveState: SolveState,
     sessionState: SessionState,
     onSolveEvent: (SolveEvent) -> Unit,
     onSessionEvent: (SessionEvent) -> Unit,
-    mainViewModel: MainViewModel
+    mainViewModel: MainViewModel,
+    mainState: State
 ) {
     val navController = rememberNavController()
     Scaffold(
@@ -63,12 +63,12 @@ fun MainScreen(
             BottomNavGraph(
                 navController = navController,
                 paddingValues = paddingValues,
-                mainActivity = MainActivity(),
                 solveState = solveState,
                 onSolveEvent = onSolveEvent,
                 sessionState = sessionState,
                 onSessionEvent = onSessionEvent,
                 viewModel = mainViewModel,
+                mainState = mainState
             )
         }
     )

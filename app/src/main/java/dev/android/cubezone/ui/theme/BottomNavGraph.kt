@@ -19,7 +19,6 @@ import dev.android.cubezone.screens.TimerScreen
 
 @Composable
 fun BottomNavGraph(
-    mainActivity: MainActivity,
     navController: NavHostController,
     modifier: Modifier = Modifier,
     paddingValues: PaddingValues,
@@ -28,6 +27,7 @@ fun BottomNavGraph(
     onSolveEvent: (SolveEvent) -> Unit,
     onSessionEvent: (SessionEvent) -> Unit,
     viewModel: MainViewModel,
+    mainState: State,
 ){
     NavHost(
         navController = navController,
@@ -41,10 +41,17 @@ fun BottomNavGraph(
                onSessionEvent = onSessionEvent,
                sessionState = sessionState,
                viewModel = viewModel,
+               mainState = mainState,
            )
         }
         composable(route = BottomBarScreen.stats.route) {
-            StatsScreen()
+            StatsScreen(
+                solveState = solveState,
+                viewModel = viewModel,
+                sessionState = sessionState,
+                onSessionEvent = onSessionEvent,
+                mainState = mainState,
+            )
         }
         composable(route = BottomBarScreen.solves.route) {
             SolvesScreen(
@@ -54,6 +61,7 @@ fun BottomNavGraph(
                 sessionState = sessionState,
                 viewModel = viewModel,
                 onSolveEvent = onSolveEvent,
+                mainState = mainState,
             )
         }
     }

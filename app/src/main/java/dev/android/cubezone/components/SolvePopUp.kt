@@ -179,6 +179,7 @@ fun SolvePopUp(
                     addComment = { onSolveEvent(SolveEvent.ShowEditCommentDialog) },
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     showAddComment = (currentSolve.comment == null || currentSolve.comment == ""),
+                    lastSolve = currentSolve,
                 )
             }
         }

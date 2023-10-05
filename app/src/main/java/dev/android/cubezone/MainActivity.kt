@@ -10,7 +10,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.ViewModel
@@ -29,20 +31,7 @@ import dev.android.cubezone.databases.solves.SolveViewModel
 import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.SavedStateHandle
 
-val myTypography = Typography(
-    labelMedium = TextStyle(
-        fontFamily = poppins,
-        fontSize = 12.sp,
-        lineHeight = 16.sp
-    ),
-    labelLarge = TextStyle(
-        fontFamily = poppins,
-        fontSize = 14.sp,
-        lineHeight = 20.sp
-    ),
-)
 
-// Create a singleton for UserPreferencesRepository
 object UserPreferencesRepositoryProvider {
     private var instance: UserPreferencesRepository? = null
 
@@ -75,12 +64,11 @@ class MainActivity : ComponentActivity() {
             }
         }
     )
-
     private val solveViewModel by viewModels<SolveViewModel> (
         factoryProducer = {
             object: ViewModelProvider.Factory {
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return SolveViewModel(solveDatabase.dao, mainViewModel = mainViewModel) as T
+                    return SolveViewModel(solveDatabase.dao, mainState = mainViewModel.state.value) as T
                 }
             }
         }
@@ -117,20 +105,22 @@ class MainActivity : ComponentActivity() {
             CubeStudioTheme {
                 val solveState by solveViewModel.state.collectAsState()
                 val sessionState by sessionViewModel.state.collectAsState()
+                val mainState by mainViewModel.state.collectAsState()
                 MainScreen(
                     solveState = solveState,
                     sessionState = sessionState,
                     onSolveEvent = solveViewModel::onSolveEvent,
                     onSessionEvent = sessionViewModel::onSessionEvent,
                     mainViewModel = mainViewModel,
+                    mainState = mainState,
                 )
             }
         }
     }
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt("current_session_id", mainViewModel.state.currentSessionId)
-        outState.putString("current_scramble_type", mainViewModel.state.currentScrambleType)
+        outState.putInt("current_session_id", mainViewModel.state.value.currentSessionId)
+        outState.putString("current_scramble_type", mainViewModel.state.value.currentScrambleType)
     }
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
