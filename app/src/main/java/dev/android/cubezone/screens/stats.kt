@@ -3,7 +3,6 @@ package dev.android.cubezone.screens
 import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
-import co.yml.charts.common.model.Point
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -36,18 +35,21 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import co.yml.charts.axis.AxisData
+import co.yml.charts.common.model.PlotType
 import co.yml.charts.ui.linechart.LineChart
+import co.yml.charts.ui.linechart.model.GridLines
 import co.yml.charts.ui.linechart.model.Line
 import co.yml.charts.ui.linechart.model.LineChartData
 import co.yml.charts.ui.linechart.model.LinePlotData
 import co.yml.charts.ui.linechart.model.LineStyle
 import dev.android.cubezone.MainViewModel
 import dev.android.cubezone.components.ScrambleSelection
+import dev.android.cubezone.components.charts.ChartStyle
+import dev.android.cubezone.components.charts.Point
 import dev.android.cubezone.databases.sessions.Session
 import dev.android.cubezone.databases.sessions.SessionEvent
 import dev.android.cubezone.databases.sessions.SessionState
 import dev.android.cubezone.databases.solves.SolveState
-import kotlin.math.ceil
 
 @Composable
 fun StatsScreen(
@@ -65,10 +67,12 @@ fun StatsScreen(
     LaunchedEffect(sessionState.sessions.find { it.sessionId == mainState.currentSessionId }) {
         selectedSession = sessionState.sessions.find { it.sessionId == sessionState.sessions.find { it.sessionId == mainState.currentSessionId }?.sessionId }
     }
+    var maxSolveTime = 0f
     var solveData: MutableList<Point> by remember(selectedSession) {
         val points = mutableListOf<Point>()
         var i = 0
         solveState.solves.forEach { solve ->
+            if (solve.time > maxSolveTime) { maxSolveTime = solve.time.toFloat() }
             if (solve.sessionId == (selectedSession?.sessionId ?: 0)) {
                 points += Point(i.toFloat(), solve.time.toFloat())
                 i++
@@ -76,11 +80,6 @@ fun StatsScreen(
         }
         mutableStateOf(points)
     }
-    val configuration = LocalConfiguration.current
-    val screenHeight by remember(solveData){ mutableStateOf(configuration.screenHeightDp)}
-    val screenWidth = configuration.screenWidthDp
-    val chartStepSize by remember(solveData) { mutableStateOf((screenWidth-70)/(solveData.size-1)) }
-    Log.d("DEBUG", "chartStepSize: $chartStepSize")
     Column {
         Row(modifier = Modifier.padding(5.dp, 0.dp)) {
             ScrambleSelection(viewModel = viewModel, currentScramble = currentScrambleType)
@@ -133,51 +132,17 @@ fun StatsScreen(
             }
             currentSessionId = mainState.currentSessionId
         }
-        val xAxisData = AxisData.Builder()
-            .axisStepSize(chartStepSize.dp)
-            .steps(minOf(10, solveData.size))
-            .labelData { i ->  i.toString()}
-            .labelAndAxisLinePadding(20.dp)
-            .axisLineColor(MaterialTheme.colorScheme.onSurface)
-            .axisLabelColor(MaterialTheme.colorScheme.onSurface)
-            .build()
-        val yAxisData = AxisData.Builder()
-            .steps(5)
-            .labelData { i ->
-                var max = 0f
-                solveState.solves.forEach { solve ->
-                    if (solve.sessionId == (selectedSession?.sessionId ?: 0) && solve.time > max) {
-                        max = solve.time.toFloat()
-                    }
-                }
-                val yScale = ceil(max)/5
-                formatTime(i*yScale)
-            }
-            .labelAndAxisLinePadding(20.dp)
-            .axisLineColor(MaterialTheme.colorScheme.onSurface)
-            .axisLabelColor(MaterialTheme.colorScheme.onSurface)
-            .build()
-        val lineChartData = LineChartData(
-            linePlotData = LinePlotData(
-                lines = listOf(
-                    Line(
-                        dataPoints = solveData,
-                        lineStyle = LineStyle(
-                            color = MaterialTheme.colorScheme.primary,
-                        ),
-                    )
-                )
-            ),
-            xAxisData = xAxisData,
-            yAxisData = yAxisData,
-            backgroundColor = MaterialTheme.colorScheme.surface,
-
-            )
         if (solveData.isNotEmpty()) {
-            LineChart(
-                lineChartData = lineChartData,
+            dev.android.cubezone.components.charts.LineChart(
+                data = solveData,
+                style = ChartStyle(
+                    lineColor = MaterialTheme.colorScheme.primary,
+                    lineThickness = 5f,
+                    showVerticalGridLines = true,
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(10.dp)
                     .height(300.dp),
             )
         } else {
