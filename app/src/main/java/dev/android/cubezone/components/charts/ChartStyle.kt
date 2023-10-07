@@ -6,8 +6,6 @@ import androidx.compose.ui.graphics.Color
 class ChartStyle(
     val bgColor: Color = Color.Transparent,
     val lineColor: Color = Color.Red,
-    val lineThickness: Float = 2f,
-    val lineType: Int = LineType.Straight,
     val axisLineColor: Color = Color.White,
     val axisLabelColor: Color = Color.White,
     val gridLinesColor: Color = Color.White,
@@ -15,6 +13,7 @@ class ChartStyle(
     val showVerticalGridLines: Boolean = false,
     val showHorizontalGridLines: Boolean = false,
     val showAxes: Boolean = true,
+    val showAxisLabels: Boolean = true,
 )
 
 class LineType {

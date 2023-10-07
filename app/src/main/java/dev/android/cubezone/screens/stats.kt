@@ -31,25 +31,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import co.yml.charts.axis.AxisData
-import co.yml.charts.common.model.PlotType
-import co.yml.charts.ui.linechart.LineChart
-import co.yml.charts.ui.linechart.model.GridLines
-import co.yml.charts.ui.linechart.model.Line
-import co.yml.charts.ui.linechart.model.LineChartData
-import co.yml.charts.ui.linechart.model.LinePlotData
-import co.yml.charts.ui.linechart.model.LineStyle
 import dev.android.cubezone.MainViewModel
 import dev.android.cubezone.components.ScrambleSelection
 import dev.android.cubezone.components.charts.ChartStyle
+import dev.android.cubezone.components.charts.Line
+import dev.android.cubezone.components.charts.LineChart
 import dev.android.cubezone.components.charts.Point
 import dev.android.cubezone.databases.sessions.Session
 import dev.android.cubezone.databases.sessions.SessionEvent
 import dev.android.cubezone.databases.sessions.SessionState
 import dev.android.cubezone.databases.solves.SolveState
+import kotlin.math.ceil
 
 @Composable
 fun StatsScreen(
@@ -59,7 +55,6 @@ fun StatsScreen(
     onSessionEvent: (SessionEvent) -> Unit,
     mainState: dev.android.cubezone.State,
 ) {
-    Log.d("DEBUG", "Outside remember - currentSessionId: ${mainState.currentSessionId}")
     var currentScrambleType: Current by remember { mutableStateOf(Current(mainState.currentScrambleType)) }
     var currentSessionId: Int by remember { mutableStateOf(mainState.currentSessionId) }
 
@@ -67,13 +62,17 @@ fun StatsScreen(
     LaunchedEffect(sessionState.sessions.find { it.sessionId == mainState.currentSessionId }) {
         selectedSession = sessionState.sessions.find { it.sessionId == sessionState.sessions.find { it.sessionId == mainState.currentSessionId }?.sessionId }
     }
-    var maxSolveTime = 0f
+    var maxSolveTime by remember{ mutableStateOf(0f)}
     var solveData: MutableList<Point> by remember(selectedSession) {
+        maxSolveTime = 0f
         val points = mutableListOf<Point>()
         var i = 0
         solveState.solves.forEach { solve ->
-            if (solve.time > maxSolveTime) { maxSolveTime = solve.time.toFloat() }
             if (solve.sessionId == (selectedSession?.sessionId ?: 0)) {
+                if (solve.time > maxSolveTime) {
+                    maxSolveTime = solve.time.toFloat()
+                    Log.d("DEBUG", "new maxSolveTime: $maxSolveTime")
+                }
                 points += Point(i.toFloat(), solve.time.toFloat())
                 i++
             }
@@ -133,17 +132,28 @@ fun StatsScreen(
             currentSessionId = mainState.currentSessionId
         }
         if (solveData.isNotEmpty()) {
-            dev.android.cubezone.components.charts.LineChart(
+            Log.d("DEBUG", "maxSolveTime: $maxSolveTime")
+            Log.d("DEBUG", "niceNumber: ${ceilToNiceNumber(maxSolveTime.toLong())}")
+            LineChart(
                 data = solveData,
                 style = ChartStyle(
                     lineColor = MaterialTheme.colorScheme.primary,
-                    lineThickness = 5f,
-                    showVerticalGridLines = true,
+                    showHorizontalGridLines = true,
+                    gridLinesColor = Color.Gray,
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(10.dp)
-                    .height(300.dp),
+                    .height(200.dp),
+                lines = listOf(
+                    Line(
+                        points = solveData,
+                        color = MaterialTheme.colorScheme.primary,
+                        thickness = 5f,
+                    )
+                ),
+                yRange = ceilToNiceNumber(maxSolveTime.toLong()).toFloat(),
+                ySteps = 5
             )
         } else {
             Surface(
@@ -165,5 +175,16 @@ fun StatsScreen(
                 }
             }
         }
+    }
+}
+
+fun ceilToNiceNumber(milliseconds: Long): Long {
+    return when (milliseconds) {
+        in 0..1000 -> 1000
+        in 1_000..30_000 -> (ceil(milliseconds / 1000.0) * 1000).toLong()
+        in 30_000..60_000 -> (ceil(milliseconds / 5000.0) * 5000).toLong()
+        in 60_000..600_000 -> (ceil(milliseconds / 10_000.0) * 10_000).toLong()
+        in 600_000..3_600_000 -> (ceil(milliseconds / 60_000.0) * 60_000).toLong()
+        else -> (ceil(milliseconds / 300_000.0) * 300_000).toLong()
     }
 }
