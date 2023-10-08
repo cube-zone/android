@@ -32,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.android.cubezone.MainViewModel
@@ -55,20 +54,22 @@ fun StatsScreen(
     onSessionEvent: (SessionEvent) -> Unit,
     mainState: dev.android.cubezone.State,
 ) {
-    var currentScrambleType: Current by remember { mutableStateOf(Current(mainState.currentScrambleType)) }
+    var currentScramble: Current by remember { mutableStateOf(Current(mainState.currentScrambleType)) }
     var currentSessionId: Int by remember { mutableStateOf(mainState.currentSessionId) }
+    var currentSession by remember { mutableStateOf<Session?>(null) }
 
-    var selectedSession by remember { mutableStateOf<Session?>(null) }
-    LaunchedEffect(sessionState.sessions.find { it.sessionId == mainState.currentSessionId }) {
-        selectedSession = sessionState.sessions.find { it.sessionId == sessionState.sessions.find { it.sessionId == mainState.currentSessionId }?.sessionId }
-    }
+    if(currentScramble.type == null) currentScramble.type = mainState.currentScrambleType
+    if(currentSession == null) currentSession = sessionState.sessions.find { it.sessionId == currentSessionId }
+    viewModel.updateCurrentScrambleType(currentScramble.type ?: "3x3")
+    viewModel.updateCurrentSessionId(currentSession?.sessionId ?: 0)
+    Log.d("stats", "currentSession: ${currentSession?.sessionName}")
     var maxSolveTime by remember{ mutableStateOf(0f)}
-    var solveData: MutableList<Point> by remember(selectedSession) {
+    var solveData: MutableList<Point> by remember(currentSession) {
         maxSolveTime = 0f
         val points = mutableListOf<Point>()
         var i = 0
         solveState.solves.forEach { solve ->
-            if (solve.sessionId == (selectedSession?.sessionId ?: 0)) {
+            if (solve.sessionId == (currentSession?.sessionId ?: 0)) {
                 if (solve.time > maxSolveTime) {
                     maxSolveTime = solve.time.toFloat()
                     Log.d("DEBUG", "new maxSolveTime: $maxSolveTime")
@@ -80,8 +81,55 @@ fun StatsScreen(
         mutableStateOf(points)
     }
     Column {
-        Row(modifier = Modifier.padding(5.dp, 0.dp)) {
-            ScrambleSelection(viewModel = viewModel, currentScramble = currentScrambleType)
+        Row(modifier = Modifier.padding(5.dp, 5.dp)) {
+            var scrambleTypeButtonExpanded by remember { mutableStateOf(false) }
+            Box(
+                modifier = Modifier
+                    .wrapContentSize(Alignment.TopStart)
+            ) {
+                OutlinedButton(
+                    onClick = { scrambleTypeButtonExpanded = true },
+                    modifier = Modifier.animateContentSize().padding(5.dp, 0.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 8.dp),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(currentScramble.type ?: "3x3")
+                        Icon(Icons.Default.ArrowDropDown, null)
+                    }
+                }
+                DropdownMenu(
+                    expanded = scrambleTypeButtonExpanded,
+                    onDismissRequest = { scrambleTypeButtonExpanded = false },
+                ) {
+                    scrambleNames.forEach { scrambleType ->
+                        DropdownMenuItem(
+                            text = { Text(scrambleType) },
+                            onClick = {
+                                scrambleTypeButtonExpanded = false
+                                currentScramble.type = scrambleType
+                                if (sessionState.sessions.find { it.scrambleType == scrambleType } != null) {
+                                    currentSession = sessionState.sessions.find { it.scrambleType == scrambleType }
+                                    viewModel.updateCurrentScrambleType(scrambleType)
+                                } else {
+                                    onSessionEvent(
+                                        SessionEvent.SetSession(
+                                            sessionName = "default",
+                                            scrambleType = scrambleType,
+                                            createdAt = System.currentTimeMillis(),
+                                            lastUsedAt = System.currentTimeMillis().toInt()
+                                        )
+                                    )
+                                    onSessionEvent(SessionEvent.SaveSession)
+                                    currentSession = sessionState.sessions.find { it.scrambleType == scrambleType }
+                                    Log.d("DEBUG", "currentSession: ${currentSession?.sessionName}")
+                                }
+                            },
+                            contentPadding = PaddingValues(horizontal = 15.dp),
+                            modifier = Modifier.sizeIn(maxHeight = 35.dp)
+                        )
+                    }
+                }
+            }
             var selectSessionButtonExpanded by remember { mutableStateOf(false) }
             Box(
                 modifier = Modifier
@@ -95,7 +143,7 @@ fun StatsScreen(
                     contentPadding = PaddingValues(start = 16.dp, end = 8.dp),
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(selectedSession?.sessionName ?: "New Session")
+                        Text(currentSession?.sessionName ?: "Not Selected")
                         Icon(Icons.Default.ArrowDropDown, null)
                     }
                 }
@@ -108,7 +156,7 @@ fun StatsScreen(
                             DropdownMenuItem(
                                 text = { Text(session.sessionName) },
                                 onClick = {
-                                    selectedSession = session
+                                    currentSession = session
                                     selectSessionButtonExpanded = false
                                     viewModel.updateCurrentSessionId(session.sessionId ?: 0)
                                 },

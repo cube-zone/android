@@ -319,7 +319,7 @@ fun TimerScreen(
 
                                             if (sessionState.sessions.find { it.scrambleType == scrambleType } != null) {
                                                 currentSession = sessionState.sessions.find { it.scrambleType == scrambleType }
-                                                Log.d("DEBUG", "not null currentSession: ${currentSession?.sessionName}")
+                                                viewModel.updateCurrentSessionId(currentSession?.sessionId ?: 0)
                                             } else {
                                                 onSessionEvent(SessionEvent.SetSession(
                                                     sessionName = "default",

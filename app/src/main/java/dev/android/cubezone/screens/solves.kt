@@ -2,6 +2,7 @@ package dev.android.cubezone.screens
 
 import android.util.Log
 import android.view.ViewTreeObserver
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,16 +18,22 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.runtime.Composable
@@ -95,15 +102,19 @@ fun SolvesScreen(
     onSolveEvent: (SolveEvent) -> Unit,
     mainState: State,
 ) {
-    var currentScrambleType: Current by remember { mutableStateOf(Current(mainState.currentScrambleType)) }
+    var currentScramble: Current by remember { mutableStateOf(Current(mainState.currentScrambleType)) }
     var currentSession: Session? by remember { mutableStateOf(null) }
+    var currentSessionId: Int by remember { mutableStateOf(mainState.currentSessionId) }
     var query: String by remember { mutableStateOf("") }
     var searchBarActive: Boolean by remember { mutableStateOf(false) }
     var searchBarCursorActive by remember { mutableStateOf(true) }
     val keyboardController = LocalSoftwareKeyboardController.current
     val keyboardIsOpen = WindowInsets.isImeVisible
     var popupSolve: Solve? by remember{ mutableStateOf(null) }
-    currentSession = sessionState.sessions.find { it.sessionId == mainState.currentSessionId }
+    if(currentScramble.type == null) currentScramble.type = mainState.currentScrambleType
+    if(currentSession == null) currentSession = sessionState.sessions.find { it.sessionId == currentSessionId }
+    viewModel.updateCurrentScrambleType(currentScramble.type ?: "3x3")
+    viewModel.updateCurrentSessionId(currentSession?.sessionId ?: 0)
     Column(
         modifier = Modifier.padding(
             top = paddingValues.calculateTopPadding(),
@@ -121,8 +132,55 @@ fun SolvesScreen(
             )
         }
         Column {
+            var scrambleTypeButtonExpanded by remember { mutableStateOf(false) }
             Row(modifier = Modifier.padding(5.dp, 0.dp)) {
-                ScrambleSelection(viewModel = viewModel, currentScramble = currentScrambleType)
+                Box(
+                    modifier = Modifier
+                        .wrapContentSize(Alignment.TopStart)
+                ) {
+                    OutlinedButton(
+                        onClick = { scrambleTypeButtonExpanded = true },
+                        modifier = Modifier.animateContentSize().padding(5.dp, 0.dp),
+                        contentPadding = PaddingValues(start = 16.dp, end = 8.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(currentScramble.type ?: "3x3")
+                            Icon(Icons.Default.ArrowDropDown, null)
+                        }
+                    }
+                    DropdownMenu(
+                        expanded = scrambleTypeButtonExpanded,
+                        onDismissRequest = { scrambleTypeButtonExpanded = false },
+                    ) {
+                        scrambleNames.forEach { scrambleType ->
+                            DropdownMenuItem(
+                                text = { Text(scrambleType) },
+                                onClick = {
+                                    scrambleTypeButtonExpanded = false
+                                    currentScramble.type = scrambleType
+                                    if (sessionState.sessions.find { it.scrambleType == scrambleType } != null) {
+                                        currentSession = sessionState.sessions.find { it.scrambleType == scrambleType }
+                                        viewModel.updateCurrentScrambleType(scrambleType)
+                                    } else {
+                                        onSessionEvent(
+                                            SessionEvent.SetSession(
+                                                sessionName = "default",
+                                                scrambleType = scrambleType,
+                                                createdAt = System.currentTimeMillis(),
+                                                lastUsedAt = System.currentTimeMillis().toInt()
+                                            )
+                                        )
+                                        onSessionEvent(SessionEvent.SaveSession)
+                                        currentSession = sessionState.sessions.find { it.scrambleType == scrambleType }
+                                        Log.d("DEBUG", "currentSession: ${currentSession?.sessionName}")
+                                    }
+                                },
+                                contentPadding = PaddingValues(horizontal = 15.dp),
+                                modifier = Modifier.sizeIn(maxHeight = 35.dp)
+                            )
+                        }
+                    }
+                }
                 SessionSelection(
                     viewModel = viewModel,
                     currentScrambleType = mainState.currentScrambleType?: "3x3",
@@ -131,6 +189,7 @@ fun SolvesScreen(
                     sessionState = sessionState,
                     mainState = mainState,
                 )
+                currentSessionId = mainState.currentSessionId
             }
             Box(
                 contentAlignment = Alignment.CenterStart,

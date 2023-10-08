@@ -2,12 +2,15 @@ package dev.android.cubezone
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.material3.MaterialTheme
 import androidx.core.view.WindowCompat
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Typography
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalConfiguration
@@ -106,6 +109,8 @@ class MainActivity : ComponentActivity() {
                 val solveState by solveViewModel.state.collectAsState()
                 val sessionState by sessionViewModel.state.collectAsState()
                 val mainState by mainViewModel.state.collectAsState()
+
+                Log.d("color", MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp).toString())
                 MainScreen(
                     solveState = solveState,
                     sessionState = sessionState,
