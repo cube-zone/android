@@ -45,13 +45,14 @@ fun LineChart(
     var xScale by remember { mutableStateOf(0f) }
     var yScale by remember { mutableStateOf(0f) }
 
-    var maxDataValue by remember(data) {
+    var maxDataValue by remember(lines) {
         var max = 0f
-        for (point in data) {
-            if (point.y == null) continue
-            if (point.y > max) max = point.y
+        for (line in lines) {
+            for (point in line.points) {
+                if (point.y == null) continue
+                if (point.y > max) max = point.y
+            }
         }
-        Log.d("LineChart", "maxDataValue: $max")
         mutableStateOf(max)
     }
     Surface(
