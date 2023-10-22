@@ -424,7 +424,7 @@ fun TimerScreen(
                         }
                     }
                 }
-                if (!currentlyTiming) TimerStats(solveState.solves, modifier = Modifier)
+                if (!currentlyTiming) TimerStats(sessionId = currentSession?.sessionId ?: 0, solveState.solves, modifier = Modifier)
             }
         }
     }

@@ -130,10 +130,11 @@ fun StatsScreen(
                             onClick = {
                                 scrambleTypeButtonExpanded = false
                                 currentScramble.type = scrambleType
+                                viewModel.updateCurrentScramble("") //set to empty so it will be updated in timer
                                 if (sessionState.sessions.find { it.scrambleType == scrambleType } != null) {
                                     currentSession = sessionState.sessions.find { it.scrambleType == scrambleType }
                                     viewModel.updateCurrentScrambleType(scrambleType)
-                                } else {
+                                } else { //if there are no sessions with this scramble type create a new one
                                     onSessionEvent(
                                         SessionEvent.SetSession(
                                             sessionName = "default",
@@ -335,13 +336,13 @@ fun StatsScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         AverageText(text = "Average")
                         for (average in averages) {
-                            AverageText(text = calculateAvg(average, solveState.solves) ?: "-")
+                            AverageText(text = calculateAvg(average, solveState.solves, sessionId = currentSession?.sessionId ?: 0) ?: "-")
                         }
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         AverageText(text = "Deviation")
                         for (average in averages) {
-                            AverageText(text = calculateAvg(average, solveState.solves) ?: "-")
+                            AverageText(text = calculateAvg(average, solveState.solves, sessionId = currentSession?.sessionId ?: 0) ?: "-")
                         }
                     }
                 }

@@ -158,6 +158,7 @@ fun SolvesScreen(
                                 onClick = {
                                     scrambleTypeButtonExpanded = false
                                     currentScramble.type = scrambleType
+                                    viewModel.updateCurrentScramble("") //set to empty so it will be updated in timer
                                     if (sessionState.sessions.find { it.scrambleType == scrambleType } != null) {
                                         currentSession = sessionState.sessions.find { it.scrambleType == scrambleType }
                                         viewModel.updateCurrentScrambleType(scrambleType)
