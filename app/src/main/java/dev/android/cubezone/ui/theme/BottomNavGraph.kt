@@ -6,7 +6,6 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import dev.android.cubezone.MainActivity
 import dev.android.cubezone.MainViewModel
 import dev.android.cubezone.State
 import dev.android.cubezone.databases.sessions.SessionEvent
@@ -51,6 +50,7 @@ fun BottomNavGraph(
                 sessionState = sessionState,
                 onSessionEvent = onSessionEvent,
                 mainState = mainState,
+                paddingValues = paddingValues,
             )
         }
         composable(route = BottomBarScreen.solves.route) {

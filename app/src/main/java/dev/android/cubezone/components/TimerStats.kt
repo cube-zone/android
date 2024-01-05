@@ -15,6 +15,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -23,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import dev.android.cubezone.databases.sessions.Session
 import dev.android.cubezone.databases.solves.Solve
 import dev.android.cubezone.screens.formatTime
+import dev.android.cubezone.statistics.aoN
 
 fun calculateAvg(range: Int, solves: List<Solve>, sessionId: Int): String? {
     var sum = 0L
@@ -48,6 +52,8 @@ fun TimerStats(
     solves: List<Solve>,
     modifier: Modifier
 ) {
+    val sessionSolves by remember { mutableStateOf(solves.filter { it.sessionId == sessionId }) }
+    Log.d("TimerStats", "sessionSolves: $sessionSolves" + "sessionId: $sessionId")
     Box(modifier = modifier) {
         Surface(
             modifier = Modifier
@@ -92,10 +98,10 @@ fun TimerStats(
                         textAlign = TextAlign.Center
                     )
                     Text(
-                        "Last Average\n${calculateAvg(5, solves, sessionId = sessionId ) ?: "-"}" +
-                                "\n${calculateAvg(12, solves, sessionId = sessionId ) ?: "-"}" +
-                                "\n${calculateAvg(50, solves, sessionId = sessionId ) ?: "-"}" +
-                                "\n${calculateAvg(100, solves, sessionId = sessionId ) ?: "-"}",
+                        "Last Average\n${formatTime(aoN(5, sessionSolves.map {it.time})?.toFloat())}" +
+                                "\n${formatTime(aoN(5, sessionSolves.map {it.time})?.toFloat())}" +
+                                "\n${formatTime(aoN(5, sessionSolves.map {it.time})?.toFloat())}" +
+                                "\n${formatTime(aoN(5, sessionSolves.map {it.time})?.toFloat())}",
                         fontSize = 12.sp,
                         lineHeight = 20.sp,
                         modifier = Modifier.padding(10.dp),

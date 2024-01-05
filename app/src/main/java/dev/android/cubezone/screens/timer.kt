@@ -42,6 +42,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -107,7 +108,8 @@ class TimerObject() {
         return System.currentTimeMillis() - startTime
     }
 }
-fun formatTime(time: Float): String {
+fun formatTime(time: Float?): String {
+    if (time == null) return "-"
     val decimal: String = ((floor(time / 10) % 100).toInt().toString())
     val seconds: String = floor((time / 1000)%60).toInt().toString()
     val minutes: String = floor(time / 60000).toInt().toString()
@@ -187,7 +189,6 @@ fun TimerScreen(
         scramble = Scramble(currentScramble.type!!)
         viewModel.updateCurrentScramble(scramble)
     }
-
     fun plusTwo() {
         lastSolve = solveState.solves[0]
         lastTime = solveState.solves[0].time

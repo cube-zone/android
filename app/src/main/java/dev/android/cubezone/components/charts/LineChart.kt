@@ -73,34 +73,33 @@ fun LineChart(
                 val xStepSize = xScale / (data.size-1)
                 val yStepSize = yScale / maxDataValue * (maxDataValue / yRange)
                 Log.d("LineChart", "help")
-
+                if (style.showHorizontalGridLines) {
+                    for (i in 0..ySteps) {
+                        drawLine(
+                            color = style.gridLinesColor,
+                            start = Offset(0f, (chartHeight.toPx()/ySteps)*i),
+                            end = Offset(chartWidth.toPx(), (chartHeight.toPx()/ySteps)*i),
+                            strokeWidth = 2f,
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+                        )
+                    }
+                }
+                if (style.showAxes) {
+                    drawLine(
+                        color = style.axisLineColor,
+                        start = Offset(0f, 0f),
+                        end = Offset(0f, chartHeight.toPx()),
+                        strokeWidth = 2f
+                    )
+                    drawLine(
+                        color = style.axisLineColor,
+                        start = Offset(0f, chartHeight.toPx()),
+                        end = Offset(chartWidth.toPx(), chartHeight.toPx()),
+                        strokeWidth = 2f
+                    )
+                }
                 lines.forEach { line ->
                     var prevPoint: Offset? = null
-                    if (style.showHorizontalGridLines) {
-                        for (i in 0..ySteps) {
-                            drawLine(
-                                color = style.gridLinesColor,
-                                start = Offset(0f, (chartHeight.toPx()/ySteps)*i),
-                                end = Offset(chartWidth.toPx(), (chartHeight.toPx()/ySteps)*i),
-                                strokeWidth = 2f,
-                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-                            )
-                        }
-                    }
-                    if (style.showAxes) {
-                        drawLine(
-                            color = style.axisLineColor,
-                            start = Offset(0f, 0f),
-                            end = Offset(0f, chartHeight.toPx()),
-                            strokeWidth = 2f
-                        )
-                        drawLine(
-                            color = style.axisLineColor,
-                            start = Offset(0f, chartHeight.toPx()),
-                            end = Offset(chartWidth.toPx(), chartHeight.toPx()),
-                            strokeWidth = 2f
-                        )
-                    }
                     for (point in line.points) {
                         if (point.y == null) continue
                         val currentPoint = Offset(
