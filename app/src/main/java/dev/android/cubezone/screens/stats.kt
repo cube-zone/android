@@ -81,7 +81,7 @@ fun StatsScreen(
                 )
             }
             Tab(selected = false, onClick = { selectedTabIndex = 1 }) {
-                Text(text = "All Time")
+                Text(text = "Global")
             }
         }
         if (selectedTabIndex == 0) {

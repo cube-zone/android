@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
@@ -67,6 +68,7 @@ import dev.android.cubezone.components.SolvePopUp
 import dev.android.cubezone.databases.sessions.Session
 import dev.android.cubezone.databases.sessions.SessionEvent
 import dev.android.cubezone.databases.sessions.SessionState
+import dev.android.cubezone.databases.sessions.SessionViewModel
 import dev.android.cubezone.databases.solves.Solve
 import dev.android.cubezone.databases.solves.SolveEvent
 import dev.android.cubezone.databases.solves.SolveState
@@ -115,6 +117,11 @@ fun SolvesScreen(
     if(currentSession == null) currentSession = sessionState.sessions.find { it.sessionId == currentSessionId }
     viewModel.updateCurrentScrambleType(currentScramble.type ?: "3x3")
     viewModel.updateCurrentSessionId(currentSession?.sessionId ?: 0)
+    var currentSessionSolves: List<Solve> by remember { mutableStateOf(listOf()) }
+    if (currentSession != null) {
+        currentSessionSolves = solveState.solves.filter { it.sessionId == currentSession!!.sessionId }
+    }
+    Log.d("RECOMPOSE", "SolvesScreen")
     Column(
         modifier = Modifier.padding(
             top = paddingValues.calculateTopPadding(),
@@ -133,14 +140,17 @@ fun SolvesScreen(
         }
         Column {
             var scrambleTypeButtonExpanded by remember { mutableStateOf(false) }
-            Row(modifier = Modifier.padding(5.dp, 0.dp)) {
+            Row(modifier = Modifier.padding(5.dp, 5.dp)) {
+                var scrambleTypeButtonExpanded by remember { mutableStateOf(false) }
                 Box(
                     modifier = Modifier
                         .wrapContentSize(Alignment.TopStart)
                 ) {
                     OutlinedButton(
                         onClick = { scrambleTypeButtonExpanded = true },
-                        modifier = Modifier.animateContentSize().padding(5.dp, 0.dp),
+                        modifier = Modifier
+                            .animateContentSize()
+                            .padding(5.dp, 0.dp),
                         contentPadding = PaddingValues(start = 16.dp, end = 8.dp),
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -162,7 +172,7 @@ fun SolvesScreen(
                                     if (sessionState.sessions.find { it.scrambleType == scrambleType } != null) {
                                         currentSession = sessionState.sessions.find { it.scrambleType == scrambleType }
                                         viewModel.updateCurrentScrambleType(scrambleType)
-                                    } else {
+                                    } else { //if there are no sessions with this scramble type create a new one
                                         onSessionEvent(
                                             SessionEvent.SetSession(
                                                 sessionName = "default",
@@ -182,14 +192,53 @@ fun SolvesScreen(
                         }
                     }
                 }
-                SessionSelection(
-                    viewModel = viewModel,
-                    currentScrambleType = mainState.currentScrambleType?: "3x3",
-                    currentSession = sessionState.sessions.find { it.sessionId == mainState.currentSessionId },
-                    onSessionEvent = onSessionEvent,
-                    sessionState = sessionState,
-                    mainState = mainState,
-                )
+                var selectSessionButtonExpanded by remember { mutableStateOf(false) }
+                Box(
+                    modifier = Modifier
+                        .wrapContentSize(Alignment.TopStart)
+                ) {
+                    OutlinedButton(
+                        onClick = { selectSessionButtonExpanded = true },
+                        modifier = Modifier
+                            .animateContentSize()
+                            .padding(5.dp, 0.dp),
+                        contentPadding = PaddingValues(start = 16.dp, end = 8.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(currentSession?.sessionName ?: "Not Selected")
+                            Icon(Icons.Default.ArrowDropDown, null)
+                        }
+                    }
+                    DropdownMenu(
+                        expanded = selectSessionButtonExpanded,
+                        onDismissRequest = { selectSessionButtonExpanded = false },
+                    ) {
+                        sessionState.sessions.forEach { session ->
+                            if (session.scrambleType == mainState.currentScrambleType) {
+                                DropdownMenuItem(
+                                    text = { Text(session.sessionName) },
+                                    onClick = {
+                                        currentSession = session
+                                        selectSessionButtonExpanded = false
+                                        viewModel.updateCurrentSessionId(session.sessionId ?: 0)
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 15.dp),
+                                    modifier = Modifier.sizeIn(maxHeight = 35.dp)
+                                )
+                            }
+                        }
+                        DropdownMenuItem(
+                            text = { Text("New Session") },
+                            trailingIcon = { Icon(Icons.Default.Add, null) },
+                            onClick = {
+                                onSessionEvent(SessionEvent.ShowAddSessionDialog)
+                                selectSessionButtonExpanded = false
+                            },
+                            contentPadding = PaddingValues(horizontal = 15.dp),
+                            modifier = Modifier.sizeIn(maxHeight = 35.dp)
+                        )
+                    }
+                }
                 currentSessionId = mainState.currentSessionId
             }
             Box(
@@ -254,10 +303,12 @@ fun SolvesScreen(
                         ),
                     ),
                 ) {}
-                LaunchedEffect(searchBarCursorActive) {
-                    while (true) {
-                        delay(500)
-                        searchBarCursorActive = !searchBarCursorActive
+                if (searchBarActive) {
+                    LaunchedEffect(searchBarCursorActive) {
+                        while (true) {
+                            delay(500)
+                            searchBarCursorActive = !searchBarCursorActive
+                        }
                     }
                 }
                 if (query != "") {
@@ -324,7 +375,7 @@ fun SolvesScreen(
                 state = rememberLazyListState(),
                 modifier = Modifier
             ) {
-                solveState.solves.forEach() { solve ->
+                currentSessionSolves.forEach { solve ->
                     if ((query == "" || solve.comment?.contains(query, ignoreCase = true) == true) && solve.sessionId == (currentSession?.sessionId ?: 0)) {
                         item {
                             Box(modifier = Modifier.clickable {
@@ -333,7 +384,7 @@ fun SolvesScreen(
                                 onSolveEvent(SolveEvent.ShowSolvePopup)
                                 Log.d("DEBUG", "$solve")
                             }) {
-                                if (solveState.solves.indexOf(solve) % 2 != 0) {
+                                if (currentSessionSolves.indexOf(solve) % 2 == 0)  {
                                     Surface(
                                         modifier = Modifier
                                             .fillMaxWidth()
