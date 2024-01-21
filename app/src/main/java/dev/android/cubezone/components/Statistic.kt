@@ -32,7 +32,7 @@ fun Statistic(
 ) {
     Surface(
         modifier = modifier,
-        tonalElevation = 3.dp,
+        tonalElevation = 2.dp,
         color = Color(ColorUtils.blendARGB(secondaryColor.toArgb(), MaterialTheme.colorScheme.surface.toArgb(), 0.9f)),
         shape = RoundedCornerShape(20.dp)
     ) {

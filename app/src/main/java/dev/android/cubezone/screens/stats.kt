@@ -55,10 +55,13 @@ import dev.android.cubezone.databases.sessions.Session
 import dev.android.cubezone.databases.sessions.SessionEvent
 import dev.android.cubezone.databases.sessions.SessionState
 import dev.android.cubezone.databases.solves.SolveState
+import dev.android.cubezone.statistics.allAvg
 import dev.android.cubezone.statistics.aoN
+import dev.android.cubezone.statistics.bestSingle
 import dev.android.cubezone.statistics.bestSingleGraph
 import dev.android.cubezone.statistics.pointsToTimes
 import dev.android.cubezone.statistics.timesToPoints
+import dev.android.cubezone.statistics.totalTime
 import kotlin.math.ceil
 
 @Composable
@@ -195,6 +198,7 @@ fun SessionStats(
                                     if (sessionState.sessions.find { it.scrambleType == scrambleType } != null) {
                                         currentSession = sessionState.sessions.find { it.scrambleType == scrambleType }
                                         viewModel.updateCurrentScrambleType(scrambleType)
+                                        currentSessionId = mainState.currentSessionId
                                     } else { //if there are no sessions with this scramble type create a new one
                                         onSessionEvent(
                                             SessionEvent.SetSession(
@@ -270,7 +274,7 @@ fun SessionStats(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(10.dp, 5.dp, 10.dp, 0.dp),
-                tonalElevation = 3.dp,
+                tonalElevation = 2.dp,
                 shape = RoundedCornerShape(20.dp),
             ) {
                 if (solveData.isNotEmpty()) {
@@ -341,7 +345,7 @@ fun SessionStats(
                 ) {
                     Statistic(
                         label = "Pb",
-                        value = "25.34",
+                        value = formatTime(bestSingle(solveState.solves.filter { it.sessionId == currentSessionId }.map { it.time })?.toFloat()),
                         modifier = Modifier
                             .fillMaxWidth(0.5f)
                             .padding(5.dp, 0.dp),
@@ -351,7 +355,7 @@ fun SessionStats(
                     )
                     Statistic(
                         label = "Time Spent",
-                        value = "1d 2h",
+                        value = formatTime(totalTime(solveState.solves.filter { it.sessionId == currentSessionId }.map { it.time }).toFloat()),
                         modifier = Modifier
                             .fillMaxWidth(1f)
                             .padding(5.dp, 0.dp),
@@ -367,14 +371,14 @@ fun SessionStats(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Statistic(label = "Number of Solves",
-                        value = "2561",
+                        value = solveState.solves.filter { it.sessionId == currentSessionId }.size.toString(),
                         modifier = Modifier
                             .fillMaxWidth(0.5f)
                             .padding(5.dp, 0.dp)
                     )
                     Statistic(
                         label = "All time average",
-                        value = "36.34",
+                        value = formatTime(allAvg(solveState.solves.filter { it.sessionId == currentSessionId }.map { it.time }).toFloat()),
                         modifier = Modifier
                             .padding(5.dp, 0.dp)
                             .fillMaxWidth()
@@ -384,7 +388,7 @@ fun SessionStats(
         }
         item {
             Surface (
-                tonalElevation = 3.dp,
+                tonalElevation = 2.dp,
                 shape = RoundedCornerShape(20.dp),
                 modifier = Modifier
                     .padding(10.dp, 0.dp, 10.dp, 10.dp)
@@ -396,7 +400,7 @@ fun SessionStats(
                                 .fillMaxWidth()
                                 .offset(y = 25.dp * i + 10.dp)
                                 .height(25.dp),
-                            tonalElevation = 3.dp,
+                            tonalElevation = 2.dp,
                         ) {}
                     }
                     Row(

@@ -59,7 +59,7 @@ fun TimerStats(
             modifier = Modifier
                 .padding(10.dp),
             shape = RoundedCornerShape(20.dp),
-            tonalElevation = 3.dp
+            tonalElevation = 2.dp
         ) {
             Box(modifier = Modifier.width(IntrinsicSize.Max)) {
                 Column {
@@ -68,21 +68,21 @@ fun TimerStats(
                             .offset(0.dp, 10.dp)
                             .fillMaxWidth()
                             .height(20.dp),
-                        tonalElevation = 5.dp
+                        tonalElevation = 2.dp
                     ) {}
                     Surface(
                         modifier = Modifier
                             .offset(0.dp, 30.dp)
                             .fillMaxWidth()
                             .height(20.dp),
-                        tonalElevation = 5.dp
+                        tonalElevation = 2.dp
                     ) {}
                     Surface(
                         modifier = Modifier
                             .offset(0.dp, 50.dp)
                             .fillMaxWidth()
                             .height(20.dp),
-                        tonalElevation = 5.dp
+                        tonalElevation = 2.dp
                     ) {}
                 }
                 Row(

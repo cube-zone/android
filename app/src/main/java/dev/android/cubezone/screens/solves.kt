@@ -367,7 +367,7 @@ fun SolvesScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(20.dp, 20.dp),
-            tonalElevation = 3.dp,
+            tonalElevation = 2.dp,
             shape = MaterialTheme.shapes.large
         ) {
             LazyColumn(
@@ -390,7 +390,7 @@ fun SolvesScreen(
                                             .fillMaxWidth()
                                             .padding(0.dp, 0.dp, 0.dp, 0.dp)
                                             .height(40.dp),
-                                        tonalElevation = 6.dp,
+                                        tonalElevation = 2.dp,
                                     ) {}
                                 }
                                 Row(

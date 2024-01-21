@@ -49,14 +49,6 @@ fun aonGraph(times: List<Long>): List<Long> {
     return res
 }
 
-fun bestSingle(times: List<Long>): Long {
-    var best = Long.MAX_VALUE
-    for (time in times) {
-        best = min(best, time)
-    }
-    return best
-}
-
 fun bestSingleGraph(times: List<Long>): List<Long> {
     val rtimes = times.reversed()
     val res = mutableListOf(rtimes[0])
@@ -82,4 +74,8 @@ fun timesToPoints(times: List<Long>): MutableList<Point> {
         i++
     }
     return res
+}
+
+fun allAvg(times: List<Long>): Long{
+    return times.sum() / times.size
 }
