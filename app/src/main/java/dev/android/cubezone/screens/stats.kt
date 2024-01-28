@@ -420,6 +420,7 @@ fun SessionStats(
                             AverageText(text = "Average")
                             for (average in averages) {
                                 val avg = calculateAvg(average, solveState.solves, sessionId = currentSession?.sessionId ?: 0)
+                                Log.d("DEBUG", "avg: $avg n: $average")
                                 val text = if (avg != null && avg != "0.00") avg else "-"
                                 AverageText(text = text)
                             }
